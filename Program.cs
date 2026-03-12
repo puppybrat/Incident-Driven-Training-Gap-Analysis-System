@@ -26,7 +26,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             /// 
             /// CreateDatabase();
 
-            Application.Run(new Form1());
+            Application.Run(new MainForm());
         }
 
         static void CreateDatabase()
