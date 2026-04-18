@@ -1,4 +1,4 @@
-namespace Incident_Driven_Training_Gap_Analysis_System
+namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
     public partial class MainForm : Form
     {
@@ -10,7 +10,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             this.Load += MainForm_Load;
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
+        private void MainForm_Load(object? sender, EventArgs e)
         {
             this.BackColor = Color.White;
             this.ForeColor = Color.Black;
@@ -23,13 +23,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             mainMenu.Dock = DockStyle.Top;
 
             ToolStripMenuItem fileMenu = new("File");
-            ToolStripMenuItem settingsMenu = new("Settings");
+            ToolStripMenuItem settingsMenu = new("Configuration");
             ToolStripMenuItem helpMenu = new("Help");
 
             ToolStripMenuItem fileNewIncident = new("Create Incident");
             ToolStripMenuItem fileGenerateReport = new("Generate Report");
-            ToolStripMenuItem fileImportData = new("Import Data");
-            ToolStripMenuItem fileExportData = new("Export Data");
+            ToolStripMenuItem fileImportData = new("Import");
+            ToolStripMenuItem fileExportData = new("Export");
             ToolStripMenuItem fileExit = new("Exit");
 
             fileMenu.DropDownItems.Add(fileNewIncident);
@@ -39,17 +39,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             fileMenu.DropDownItems.Add(fileExit);
 
-            ToolStripMenuItem settingsRules = new("Rules");
-            ToolStripMenuItem settingsPreferences = new("Preferences");
+            ToolStripMenuItem settingsRules = new("Configure Rules");
 
             settingsMenu.DropDownItems.Add(settingsRules);
-            settingsMenu.DropDownItems.Add(settingsPreferences);
 
-            ToolStripMenuItem helpUserGuide = new("User Guide");
-            ToolStripMenuItem helpAbout = new("About");
+            ToolStripMenuItem helpUserGuide = new("View Help / README");
 
             helpMenu.DropDownItems.Add(helpUserGuide);
-            helpMenu.DropDownItems.Add(helpAbout);
 
             mainMenu.Items.Add(fileMenu);
             mainMenu.Items.Add(settingsMenu);
@@ -75,7 +71,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             btnCreate.Height = 40;
 
             Button btnImport = new();
-            btnImport.Text = "Import Data";
+            btnImport.Text = "Import";
             btnImport.Width = 130;
             btnImport.Height = 40;
 
@@ -85,7 +81,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             btnReport.Height = 40;
 
             Button btnExport = new();
-            btnExport.Text = "Export Data";
+            btnExport.Text = "Export";
             btnExport.Width = 130;
             btnExport.Height = 40;
 
@@ -105,10 +101,21 @@ namespace Incident_Driven_Training_Gap_Analysis_System
 
             this.Controls.Add(mainMenu);
 
-            btnCreate.Click += (s, ev) => ShowScreen(new IncidentEntryControl());
-            btnReport.Click += (s, ev) => ShowScreen(new GenerateReportControl());
+            btnCreate.Click += (s, ev) => OpenIncidentForm();
+            btnImport.Click += (s, ev) => OpenImportDialog();
+            btnReport.Click += (s, ev) => OpenReportForm();
+            btnExport.Click += (s, ev) => OpenExportDialog();
 
-            ShowScreen(new IncidentEntryControl());
+            fileNewIncident.Click += (s, ev) => OpenIncidentForm();
+            fileGenerateReport.Click += (s, ev) => OpenReportForm();
+            fileImportData.Click += (s, ev) => OpenImportDialog();
+            fileExportData.Click += (s, ev) => OpenExportDialog();
+            fileExit.Click += (s, ev) => ExitApplication();
+
+            settingsRules.Click += (s, ev) => OpenRuleConfigForm();
+            helpUserGuide.Click += (s, ev) => OpenHelpDisplay();
+
+            OpenIncidentForm();
         }
 
         private void ShowScreen(UserControl screen)
@@ -116,6 +123,44 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             contentPanel.Controls.Clear();
             screen.Dock = DockStyle.Fill;
             contentPanel.Controls.Add(screen);
+        }
+
+        private void OpenIncidentForm()
+        {
+            ShowScreen(new IncidentForm());
+        }
+
+        private void OpenReportForm()
+        {
+            ShowScreen(new ReportForm());
+        }
+
+        private void OpenRuleConfigForm()
+        {
+            ShowScreen(new RuleConfigForm());
+        }
+
+        private void OpenImportDialog()
+        { 
+            using ImportDialog dialog = new();
+            dialog.ShowDialog();
+        }
+
+        private void OpenExportDialog()
+        {
+            using ExportDialog dialog = new();
+            dialog.ShowDialog();
+        }
+
+        private void OpenHelpDisplay()
+        {
+            using HelpDisplay display = new();
+            display.ShowDialog();
+        }
+
+        private void ExitApplication()
+        {
+            this.Close();
         }
     }
 }

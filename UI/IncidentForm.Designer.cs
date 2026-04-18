@@ -1,6 +1,6 @@
-﻿namespace Incident_Driven_Training_Gap_Analysis_System
+﻿namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
-    partial class IncidentEntryControl
+    partial class IncidentForm
     {
         /// <summary> 
         /// Required designer variable.
