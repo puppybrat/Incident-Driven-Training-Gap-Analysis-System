@@ -30,7 +30,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         public SqliteConnection OpenConnection(string databaseConfiguration)
         {
          // Establishes a connection to the SQLite database using the provided connection string
-            SqliteConnection databaseConnection = new (databaseConfiguration);
+            SqliteConnection databaseConnection = new(databaseConfiguration);
             databaseConnection.Open();
             return databaseConnection;
         }

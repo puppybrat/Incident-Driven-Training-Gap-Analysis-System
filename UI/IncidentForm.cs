@@ -7,8 +7,8 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
     public partial class IncidentForm : UserControl
     {
         // Initializes the panels and combo box as null, to be populated later in the BuildLayout method
-        private FlowLayoutPanel _linePanel = null!;
         private FlowLayoutPanel _shiftPanel = null!;
+        private FlowLayoutPanel _linePanel = null!;
         private FlowLayoutPanel _equipmentPanel = null!;
         private ComboBox _cboSop = null!;
 
@@ -105,12 +105,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 Height = 35
             };
 
-            _linePanel = new FlowLayoutPanel()
+            _shiftPanel = new FlowLayoutPanel()
             {
                 AutoSize = true
             };
 
-            _shiftPanel = new FlowLayoutPanel()
+            _linePanel = new FlowLayoutPanel()
             {
                 AutoSize = true
             };
@@ -136,11 +136,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             formLayout.Controls.Add(new Label() { Text = "Occurred At", AutoSize = true }, 0, 1);
             formLayout.Controls.Add(_dtpOccurredAt, 1, 1);
 
-            formLayout.Controls.Add(new Label() { Text = "Line", AutoSize = true }, 0, 2);
-            formLayout.Controls.Add(_linePanel, 1, 2);
-
             formLayout.Controls.Add(new Label() { Text = "Shift", AutoSize = true }, 0, 3);
-            formLayout.Controls.Add(_shiftPanel, 1, 3);
+            formLayout.Controls.Add(_shiftPanel, 1, 2);
+
+            formLayout.Controls.Add(new Label() { Text = "Line", AutoSize = true }, 0, 2);
+            formLayout.Controls.Add(_linePanel, 1, 3);
 
             formLayout.Controls.Add(new Label() { Text = "Equipment", AutoSize = true }, 0, 4);
             formLayout.Controls.Add(_equipmentPanel, 1, 4);
@@ -170,22 +170,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
         public void LoadReferenceData()
         {
-            _linePanel.Controls.Clear();
             _shiftPanel.Controls.Clear();
+            _linePanel.Controls.Clear();
             _equipmentPanel.Controls.Clear();
             _cboSop.Items.Clear();
 
             ReferenceDataSet referenceData = _incidentManager.GetAllReferenceData();
-
-            foreach (Line line in referenceData.Lines)
-            {
-                _linePanel.Controls.Add(new RadioButton
-                {
-                    Text = line.Name,
-                    Tag = line.LineId,
-                    AutoSize = true
-                });
-            }
 
             foreach (Shift shift in referenceData.Shifts)
             {
@@ -193,6 +183,16 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 {
                     Text = shift.Name,
                     Tag = shift.ShiftId,
+                    AutoSize = true
+                });
+            }
+
+            foreach (Line line in referenceData.Lines)
+            {
+                _linePanel.Controls.Add(new RadioButton
+                {
+                    Text = line.Name,
+                    Tag = line.LineId,
                     AutoSize = true
                 });
             }
