@@ -26,6 +26,16 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             return _referenceDataRepository.GetAllReferenceData();
         }
 
+        public List<Equipment> GetEquipmentByLine(int lineId)
+        {
+            return _referenceDataRepository.GetEquipmentByLine(lineId);
+        }
+
+        public List<SOP> GetSopsByEquipment(int equipmentId)
+        {
+            return _referenceDataRepository.GetSopsByEquipment(equipmentId);
+        }
+
         /// <summary>
         /// Creates a new incident using the specified incident data.
         /// Validates incoming data, constructs the object model, and saves it to the data store. Returns true if the incident was created successfully; otherwise, false.
@@ -34,7 +44,15 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <returns>true if the incident was created successfully; otherwise, false.</returns>
         public bool CreateIncident(Incident incidentData)
         {
-            return false;
+            ValidationResult validationResult = ValidateIncident(incidentData);
+
+            if(!validationResult.IsValid)
+            {
+                // Display validation error to the user
+                return false;
+            }
+
+            return SaveIncident(incidentData);
         }
 
         /// <summary>
@@ -46,7 +64,51 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// errors.</returns>
         public ValidationResult ValidateIncident(Incident incidentData)
         {
-            return new ValidationResult();
+            ValidationResult validationResult = new()
+            {
+                IsValid = true
+            };
+
+            if (incidentData is null)
+            {
+                validationResult.IsValid = false;
+                validationResult.Errors.Add("Incident data is required.");
+                return validationResult;
+            }
+
+            if (!incidentData.IsCompleteForCreation())
+            {
+                validationResult.IsValid = false;
+
+                if (incidentData.IncidentId <= 0)
+                {
+                    validationResult.Errors.Add("Incident ID must be greater than 0.");
+                }
+
+                if (incidentData.OccurredAt > DateTime.Now)
+                {
+                    validationResult.Errors.Add("Occurred At cannot be set past the current time.");
+                }
+
+                if (incidentData.ShiftId <= 0)
+                {
+                    validationResult.Errors.Add("Shift is required.");
+                }
+
+                if (incidentData.EquipmentId <= 0)
+                {
+                    validationResult.Errors.Add("Equipment is required.");
+                }
+            }
+
+            Incident? existingIncident = _incidentRepository.GetIncidentById(incidentData.IncidentId);
+            if (existingIncident is not null)
+            {
+                validationResult.IsValid = false;
+                validationResult.Errors.Add($"An incident with ID {incidentData.IncidentId} already exists.");
+            }
+
+            return validationResult;
         }
 
         /// <summary>
@@ -57,7 +119,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <returns>true if the incident was saved successfully; otherwise, false.</returns>
         public bool SaveIncident(Incident incident)
         {
-            return false;
+            return _incidentRepository.InsertIncident(incident);
         }
     }
 }

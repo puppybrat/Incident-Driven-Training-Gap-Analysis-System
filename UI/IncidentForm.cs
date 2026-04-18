@@ -25,6 +25,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             InitializeComponent();
             BuildLayout();
             LoadReferenceData();
+
+            // Guards against creating a time and date in the future, which would be invalid for an incident occurrence time
+            _dtpOccurredAt.MaxDate = DateTime.Now;
         }
 
         // Defines a private class to represent items in the combo box, storing both the value (ID) and text (name) for each item
@@ -41,6 +44,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             }
         }
 
+        /// <summary>
+        /// Accepts a parameter to identify the panel containing the radio buttons and iterates through its controls to uncheck any selected radio buttons, effectively clearing the user's selection for that category.
+        /// </summary>
+        /// <param name="panel">The FlowLayoutPanel containing the radio buttons to be cleared.</param>
         private void ClearSelectedRadioButton(FlowLayoutPanel panel)
         {
             foreach (Control control in panel.Controls)
@@ -52,7 +59,36 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             }
         }
 
-        // Builds the layout of the IncidentEntryControl by creating and arranging various controls such as labels, text boxes, date pickers, panels for radio buttons, and a combo box for SOP selection
+        private int? GetSelectedRadioButtonValue(FlowLayoutPanel panel)
+        {
+            foreach (Control control in panel.Controls)
+            {
+                if (control is RadioButton radioButton && radioButton.Checked)
+                {
+                    return (int)radioButton.Tag;
+                }
+            }
+
+            return null; 
+        }
+
+        private int? GetSelectedSopId()
+        {
+            if (_cboSop.SelectedItem is ComboBoxItem selectedItem)
+            {
+                return selectedItem.Value;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Initializes and arranges the user interface elements for the incident entry form.
+        /// </summary>
+        /// <remarks>This method sets up the layout, labels, input controls, and action buttons required
+        /// for entering a new incident. It should be called during control initialization to ensure all UI components
+        /// are properly configured and displayed. The method is intended for internal use within the control and is not
+        /// designed to be called directly by external code.</remarks>
         private void BuildLayout()
         {
             this.BackColor = Color.White;
@@ -136,10 +172,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             formLayout.Controls.Add(new Label() { Text = "Occurred At", AutoSize = true }, 0, 1);
             formLayout.Controls.Add(_dtpOccurredAt, 1, 1);
 
-            formLayout.Controls.Add(new Label() { Text = "Shift", AutoSize = true }, 0, 3);
+            formLayout.Controls.Add(new Label() { Text = "Shift", AutoSize = true }, 0, 2);
             formLayout.Controls.Add(_shiftPanel, 1, 2);
 
-            formLayout.Controls.Add(new Label() { Text = "Line", AutoSize = true }, 0, 2);
+            formLayout.Controls.Add(new Label() { Text = "Line", AutoSize = true }, 0, 3);
             formLayout.Controls.Add(_linePanel, 1, 3);
 
             formLayout.Controls.Add(new Label() { Text = "Equipment", AutoSize = true }, 0, 4);
@@ -189,47 +225,163 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
             foreach (Line line in referenceData.Lines)
             {
-                _linePanel.Controls.Add(new RadioButton
+                RadioButton lineRadioButton = new()
                 {
                     Text = line.Name,
                     Tag = line.LineId,
                     AutoSize = true
-                });
-            }
+                };
 
-            foreach (Equipment equipment in referenceData.Equipment)
-            {
-                _equipmentPanel.Controls.Add(new RadioButton
-                {
-                    Text = equipment.Name,
-                    Tag = equipment.EquipmentId,
-                    AutoSize = true
-                });
-            }
-
-            foreach (SOP sop in referenceData.Sops)
-            {
-                _cboSop.Items.Add(new ComboBoxItem(sop.SopId, sop.Name));
+                lineRadioButton.CheckedChanged += LineRadioButton_CheckedChanged;
+                _linePanel.Controls.Add(lineRadioButton);
             }
 
             _cboSop.DisplayMember = nameof(ComboBoxItem.Text);
             _cboSop.ValueMember = nameof(ComboBoxItem.Value);
         }
 
-        public void ProcessIncidentSubmission()
+        private void LineRadioButton_CheckedChanged(object? sender, EventArgs e)
         {
-            MessageBox.Show("Incident submission stub called.");
+            if (sender is not RadioButton radioButton || !radioButton.Checked)
+            {
+                return;
+            }
+
+            int lineId = (int)radioButton.Tag;
+            LoadEquipmentByLine(lineId);
         }
 
+        private void EquipmentRadioButton_CheckedChanged(object? sender, EventArgs e)
+        {
+            if (sender is not RadioButton radioButton || !radioButton.Checked)
+            {
+                return;
+            }
+
+            int equipmentId = (int)radioButton.Tag;
+            LoadSopsByEquipment(equipmentId);
+        }
+
+        private void LoadEquipmentByLine(int lineId)
+        {
+            _equipmentPanel.Controls.Clear();
+            _cboSop.Items.Clear();
+            _cboSop.SelectedIndex = -1;
+
+            List<Equipment> equipmentList = _incidentManager.GetEquipmentByLine(lineId);
+
+            foreach (Equipment equipment in equipmentList)
+            {
+                RadioButton equipmentRadioButton = new()
+                {
+                    Text = equipment.Name,
+                    Tag = equipment.EquipmentId,
+                    AutoSize = true
+                };
+
+                equipmentRadioButton.CheckedChanged += EquipmentRadioButton_CheckedChanged;
+                _equipmentPanel.Controls.Add(equipmentRadioButton);
+            }
+        }
+
+        private void LoadSopsByEquipment(int equipmentId)
+        {
+            _cboSop.Items.Clear();
+            _cboSop.SelectedIndex = -1;
+
+            List<SOP> sopList = _incidentManager.GetSopsByEquipment(equipmentId);
+
+            foreach (SOP sop in sopList)
+            {
+                _cboSop.Items.Add(new ComboBoxItem(sop.SopId, sop.Name));
+            }
+        }
+
+        public void ProcessIncidentSubmission()
+        {
+            // Refresh "now" to reflect submit time
+            _dtpOccurredAt.MaxDate = DateTime.Now;
+
+            if (!int.TryParse(_txtId.Text, out int incidentId))
+            {
+                MessageBox.Show("Please enter a valid numeric incident ID.");
+                return;
+            }
+
+            int? shiftId = GetSelectedRadioButtonValue(_shiftPanel);
+            int? lineId = GetSelectedRadioButtonValue(_linePanel);
+            int? equipmentId = GetSelectedRadioButtonValue(_equipmentPanel);
+            int? sopId = GetSelectedSopId();
+
+            if (!shiftId.HasValue)
+            {                
+                MessageBox.Show("Please select a shift.");
+                return;
+            }
+
+            if (!lineId.HasValue)
+            {
+                MessageBox.Show("Please select a line.");
+                return;
+            }
+
+            if (!equipmentId.HasValue)
+            {
+                MessageBox.Show("Please select equipment.");
+                return;
+            }
+
+            Incident incident = new()
+            {
+                IncidentId = incidentId,
+                OccurredAt = _dtpOccurredAt.Value,
+                ShiftId = shiftId.Value,
+                EquipmentId = equipmentId.Value,
+                SopId = sopId
+            };
+
+            bool created = _incidentManager.CreateIncident(incident);
+
+            if (created)
+            {
+                ShowConfirmation();
+                ClearForm();
+            }
+            else
+            {
+                ValidationResult validationResult = _incidentManager.ValidateIncident(incident);
+
+                if (!validationResult.IsValid && validationResult.Errors.Any())
+                {
+                    MessageBox.Show(string.Join(Environment.NewLine, validationResult.Errors));
+                }
+                else
+                {
+                    MessageBox.Show("Failed to create incident. No validation errors available.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears all user input fields and resets the form to its default state.
+        /// </summary>
+        /// <remarks>Use this method to reset the form before entering new data or after completing an
+        /// operation. All text fields, selection controls, and panels are cleared or reset to their initial
+        /// values.</remarks>
         public void ClearForm()
         {
             _txtId.Clear();
-            _dtpOccurredAt.Value = DateTime.Now;
-            _cboSop.SelectedIndex = -1;
 
-            ClearSelectedRadioButton(_linePanel);
+            _dtpOccurredAt.MaxDate = DateTime.Now;
+            _dtpOccurredAt.Value = _dtpOccurredAt.MaxDate;
+
             ClearSelectedRadioButton(_shiftPanel);
+            ClearSelectedRadioButton(_linePanel);
             ClearSelectedRadioButton(_equipmentPanel);
+
+            _equipmentPanel.Controls.Clear();
+            _cboSop.Items.Clear();
+            _cboSop.SelectedIndex = -1;
         }
 
         public void ShowConfirmation()
