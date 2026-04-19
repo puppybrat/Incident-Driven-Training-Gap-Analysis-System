@@ -31,11 +31,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                 using SqliteConnection connection = _databaseManager.OpenConnection(_databaseManager.ConnectionString);
 
                 string sql = @"
-                INSERT INTO Incident (incidentId, occurredAt, equipmentId, shiftId, sopId)
-                VALUES (@incidentId, @occurredAt, @equipmentId, @shiftId, @sopId);";
+                INSERT INTO Incident (occurredAt, equipmentId, shiftId, sopId)
+                VALUES (@occurredAt, @equipmentId, @shiftId, @sopId);";
 
                 using SqliteCommand command = new(sql, connection);
-                command.Parameters.AddWithValue("@incidentId", incident.IncidentId);
                 command.Parameters.AddWithValue("@occurredAt", incident.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss"));
                 command.Parameters.AddWithValue("@equipmentId", incident.EquipmentId);
                 command.Parameters.AddWithValue("@shiftId", incident.ShiftId);
@@ -72,13 +71,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                 using SqliteTransaction transaction = connection.BeginTransaction();
 
                 string sql = @"
-                INSERT INTO Incident (incidentId, occurredAt, equipmentId, shiftId, sopId)
-                VALUES (@incidentId, @occurredAt, @equipmentId, @shiftId, @sopId);";
+                INSERT INTO Incident (occurredAt, equipmentId, shiftId, sopId)
+                VALUES (@occurredAt, @equipmentId, @shiftId, @sopId);";
 
                 foreach (Incident incident in incidentCollection)
                 {
                     using SqliteCommand command = new(sql, connection, transaction);
-                    command.Parameters.AddWithValue("@incidentId", incident.IncidentId);
                     command.Parameters.AddWithValue("@occurredAt", incident.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss"));
                     command.Parameters.AddWithValue("@equipmentId", incident.EquipmentId);
                     command.Parameters.AddWithValue("@shiftId", incident.ShiftId);

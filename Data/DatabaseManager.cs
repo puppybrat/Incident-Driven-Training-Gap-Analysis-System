@@ -2,6 +2,9 @@
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Data
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class DatabaseManager
     {
         private readonly string _databaseConnectionString;
@@ -108,11 +111,20 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
 
                 string createIncidentTable = @"
             CREATE TABLE IF NOT EXISTS Incident (
-                incidentId INTEGER PRIMARY KEY,
+                incidentId INTEGER PRIMARY KEY AUTOINCREMENT,
                 occurredAt TEXT NOT NULL,
                 equipmentId INTEGER REFERENCES Equipment(equipmentId),
                 shiftId INTEGER REFERENCES Shift(shiftId),
                 sopId INTEGER REFERENCES SOP(sopId)
+            );";
+
+                string createRuleConfigTable = @"
+            CREATE TABLE IF NOT EXISTS RuleConfig (
+                ruleConfigId INTEGER PRIMARY KEY CHECK (ruleConfigId = 1),
+                thresholdValue REAL NOT NULL,
+                groupingType TEXT NOT NULL,
+                timeWindow TEXT NOT NULL,
+                flagEnabled INTEGER NOT NULL
             );";
 
                 using (SqliteCommand command = new(createLineTable, connection))
@@ -136,6 +148,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                 }
 
                 using (SqliteCommand command = new(createIncidentTable, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                using (SqliteCommand command = new(createRuleConfigTable, connection))
                 {
                     command.ExecuteNonQuery();
                 }

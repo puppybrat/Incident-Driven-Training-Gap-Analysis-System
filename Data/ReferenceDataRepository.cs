@@ -21,6 +21,10 @@ using Microsoft.Data.Sqlite;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Data
 {
+    /// <summary>
+    /// Provides methods for retrieving and seeding reference data entities such as shifts, lines, equipment, and
+    /// standard operating procedures (SOPs) from the database. Supports UI population and dependent selection scenarios.
+    /// </summary>
     public class ReferenceDataRepository
     {
         private readonly DatabaseManager _databaseManager;
