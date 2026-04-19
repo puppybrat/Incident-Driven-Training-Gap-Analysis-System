@@ -27,7 +27,6 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
     /// </summary>
     public partial class IncidentForm : UserControl
     {
-        // Initializes the panels and combo box as null, to be populated later in the BuildLayout method
         private FlowLayoutPanel _shiftPanel = null!;
         private FlowLayoutPanel _linePanel = null!;
         private FlowLayoutPanel _equipmentPanel = null!;

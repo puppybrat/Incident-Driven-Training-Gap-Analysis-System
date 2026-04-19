@@ -21,63 +21,216 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             _referenceDataRepository = new ReferenceDataRepository(databaseManager);
         }
 
-        /// <summary>
-        /// Generates a report based on the specified report request parameters.
-        /// Top-level method that orchestrates the report generation process by applying filters, aggregating results, formatting the output, and building the final report result.
-        /// </summary>
-        /// <param name="reportRequest">An object containing the parameters and criteria for the report to be generated. Cannot be null.</param>
-        /// <returns>A ReportResult object containing the results of the generated report.</returns>
         public ReportResult GenerateReport(ReportRequest reportRequest)
         {
-            return new ReportResult();
+            List<Incident> filteredIncidents = ApplyFilters(reportRequest);
+
+            List<ReportRow> rows = reportRequest.PresetName switch
+            {
+                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents),
+                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents),
+                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents),
+                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents),
+                _ => new List<ReportRow>()
+            };
+
+            RuleEvaluator evaluator = new();
+            RuleConfig config = evaluator.LoadCurrentRuleConfig();
+            rows = evaluator.EvaluateThresholds(rows, config);
+
+            return new ReportResult
+            {
+                PresetName = reportRequest.PresetName,
+                OutputType = reportRequest.OutputType,
+                Rows = rows
+            };
         }
 
-        /// <summary>
-        /// Applies the specified filters from the report request and returns a list of incidents that match the criteria.
-        /// Filters are applied based on the criteria specified in the report request, such as date ranges, incident types, and other relevant attributes.
-        /// </summary>
-        /// <param name="reportRequest">The report request containing filter criteria to apply when retrieving incidents. Cannot be null.</param>
-        /// <returns>A list of incidents that satisfy the filter criteria specified in the report request. The list is empty if
-        /// no incidents match.</returns>
         public List<Incident> ApplyFilters(ReportRequest reportRequest)
         {
-            return new List<Incident>();
+            FilterSet filters = reportRequest.Filters ?? new FilterSet();
+            return _incidentRepository.GetIncidents(filters);
         }
 
-        /// <summary>
-        /// Aggregates a collection of filtered incidents into summary results.
-        /// Groups the provided incidents based on relevant attributes (e.g., by date, type, severity) and computes summary statistics for each group (e.g., count, average severity) for display in the final report.
-        /// </summary>
-        /// <param name="filteredIncidents">The list of incidents to aggregate. Only incidents included in this list are considered in the aggregation.
-        /// Cannot be null.</param>
-        /// <returns>A list of aggregate results representing the computed summaries for the provided incidents. The list is
-        /// empty if no incidents are provided.</returns>
         public List<AggregateResult> AggregateIncidents(List<Incident> filteredIncidents)
         {
-            return new List<AggregateResult>();
+            ReportRequest defaultRequest = new()
+            {
+                PresetName = "Incidents per Equipment",
+                OutputType = "Table"
+            };
+
+            return AggregateIncidents(filteredIncidents, defaultRequest);
         }
 
-        /// <summary>
-        /// Formats a collection of aggregate results into a list of formatted result objects.
-        /// Shapes it into the appropriate output format for display in the final report, between a table or a chart, depending on the report type specified in the report request. This may involve mapping aggregate result properties to display labels and values, and applying any necessary formatting rules for presentation.
-        /// </summary>
-        /// <param name="aggregateCollection">The collection of aggregate results to be formatted. Cannot be null.</param>
-        /// <returns>A list of formatted result objects representing the formatted output of the provided aggregate results. The
-        /// list will be empty if the input collection contains no items.</returns>
+        public List<AggregateResult> AggregateIncidents(List<Incident> filteredIncidents, ReportRequest reportRequest)
+        {
+            List<ReportRow> rows = reportRequest.PresetName switch
+            {
+                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents),
+                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents),
+                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents),
+                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents),
+                _ => new List<ReportRow>()
+            };
+
+            return rows.Select(r => new AggregateResult
+            {
+                GroupLabel = string.IsNullOrWhiteSpace(r.GroupSecondary)
+                    ? r.GroupPrimary
+                    : $"{r.GroupPrimary} - {r.GroupSecondary}",
+                IncidentCount = r.IncidentCount,
+                IsFlagged = r.IsFlagged
+            }).ToList();
+        }
+
         public List<FormattedResult> FormatResults(List<AggregateResult> aggregateCollection)
         {
-            return new List<FormattedResult>();
+            return aggregateCollection
+                .Select(a => new FormattedResult
+                {
+                    DisplayLabel = a.GroupLabel,
+                    DisplayValue = a.IncidentCount.ToString()
+                })
+                .ToList();
         }
 
-        /// <summary>
-        /// Builds a new report result from the specified collection of formatted results.
-        /// Combines the formatted results into a single report object, ready for presentation or export. This method encapsulates the final step in the report generation process, ensuring that all relevant data is included and properly structured.
-        /// </summary>
-        /// <param name="formattedResults">A list of formatted results to include in the report. Cannot be null.</param>
-        /// <returns>A new instance of ReportResult containing the aggregated report data.</returns>
         public ReportResult BuildReportResult(List<FormattedResult> formattedResults)
         {
-            return new ReportResult();
+            ReportResult result = new();
+
+            foreach (FormattedResult formatted in formattedResults)
+            {
+                result.Rows.Add(new ReportRow
+                {
+                    GroupPrimary = formatted.DisplayLabel,
+                    IncidentCount = int.TryParse(formatted.DisplayValue, out int count) ? count : 0,
+                    IsFlagged = false
+                });
+            }
+
+            return result;
+        }
+
+        private List<ReportRow> BuildIncidentsPerEquipment(List<Incident> incidents)
+        {
+            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+
+            Dictionary<int, string> equipmentLookup = referenceData.Equipment
+                .ToDictionary(e => e.EquipmentId, e => e.Name);
+
+            return incidents
+                .GroupBy(i => equipmentLookup.TryGetValue(i.EquipmentId, out string? equipmentName)
+                    ? equipmentName
+                    : $"Equipment {i.EquipmentId}")
+                .Select(g => new ReportRow
+                {
+                    GroupPrimary = g.Key,
+                    IncidentCount = g.Count()
+                })
+                .OrderByDescending(r => r.IncidentCount)
+                .ThenBy(r => r.GroupPrimary)
+                .ToList();
+        }
+
+        private List<ReportRow> BuildIncidentsPerSopReference(List<Incident> incidents)
+        {
+            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+
+            Dictionary<int, string> sopLookup = referenceData.Sops
+                .ToDictionary(s => s.SopId, s => s.Name);
+
+            return incidents
+                .GroupBy(i =>
+                {
+                    if (i.SopId.HasValue && sopLookup.TryGetValue(i.SopId.Value, out string? sopName))
+                    {
+                        return sopName;
+                    }
+
+                    return "No SOP";
+                })
+                .Select(g => new ReportRow
+                {
+                    GroupPrimary = g.Key,
+                    IncidentCount = g.Count()
+                })
+                .OrderByDescending(r => r.IncidentCount)
+                .ThenBy(r => r.GroupPrimary)
+                .ToList();
+        }
+
+        private List<ReportRow> BuildLinesByMissingSop(List<Incident> incidents)
+        {
+            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+
+            Dictionary<int, Equipment> equipmentLookup = referenceData.Equipment
+                .ToDictionary(e => e.EquipmentId, e => e);
+
+            Dictionary<int, string> lineLookup = referenceData.Lines
+                .ToDictionary(l => l.LineId, l => l.Name);
+
+            return incidents
+                .Where(i => !i.SopId.HasValue)
+                .GroupBy(i =>
+                {
+                    if (equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment) &&
+                        lineLookup.TryGetValue(equipment.LineId, out string? lineName))
+                    {
+                        return lineName;
+                    }
+
+                    return "Unknown Line";
+                })
+                .Select(g => new ReportRow
+                {
+                    GroupPrimary = g.Key,
+                    IncidentCount = g.Count()
+                })
+                .OrderByDescending(r => r.IncidentCount)
+                .ThenBy(r => r.GroupPrimary)
+                .ToList();
+        }
+
+        private List<ReportRow> BuildIncidentsPerShiftByLine(List<Incident> incidents)
+        {
+            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+
+            Dictionary<int, string> shiftLookup = referenceData.Shifts
+                .ToDictionary(s => s.ShiftId, s => s.Name);
+
+            Dictionary<int, Equipment> equipmentLookup = referenceData.Equipment
+                .ToDictionary(e => e.EquipmentId, e => e);
+
+            Dictionary<int, string> lineLookup = referenceData.Lines
+                .ToDictionary(l => l.LineId, l => l.Name);
+
+            return incidents
+                .GroupBy(i =>
+                {
+                    string shiftName = shiftLookup.TryGetValue(i.ShiftId, out string? shiftNameValue)
+                        ? shiftNameValue
+                        : $"Shift {i.ShiftId}";
+
+                    string lineName = "Unknown Line";
+
+                    if (equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment) &&
+                        lineLookup.TryGetValue(equipment.LineId, out string? resolvedLine))
+                    {
+                        lineName = resolvedLine;
+                    }
+
+                    return new { Shift = shiftName, Line = lineName };
+                })
+                .Select(g => new ReportRow
+                {
+                    GroupPrimary = g.Key.Shift,
+                    GroupSecondary = g.Key.Line,
+                    IncidentCount = g.Count()
+                })
+                .OrderBy(r => r.GroupPrimary)
+                .ThenBy(r => r.GroupSecondary)
+                .ToList();
         }
     }
 }

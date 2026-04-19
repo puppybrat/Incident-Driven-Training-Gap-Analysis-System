@@ -168,18 +168,25 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                 FROM Incident i
                 INNER JOIN Equipment e ON i.equipmentId = e.equipmentId
                 WHERE (@lineId IS NULL OR e.lineId = @lineId)
-                ORDER BY i.incidentId;";
+                  AND (@shiftId IS NULL OR i.shiftId = @shiftId)
+                  AND (@equipmentId IS NULL OR i.equipmentId = @equipmentId)
+                  AND (@sopId IS NULL OR i.sopId = @sopId)
+                  AND (@startDate IS NULL OR i.occurredAt >= @startDate)
+                  AND (@endDate IS NULL OR i.occurredAt < @endDate)
+                ORDER BY i.occurredAt;";
 
                 using SqliteCommand command = new(sql, connection);
 
-                if (filterSet.LineId.HasValue)
-                {
-                    command.Parameters.AddWithValue("@lineId", filterSet.LineId.Value);
-                }
-                else
-                {
-                    command.Parameters.AddWithValue("@lineId", DBNull.Value);
-                }
+                command.Parameters.AddWithValue("@lineId", filterSet.LineId.HasValue ? filterSet.LineId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@shiftId", filterSet.ShiftId.HasValue ? filterSet.ShiftId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@equipmentId", filterSet.EquipmentId.HasValue ? filterSet.EquipmentId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@sopId", filterSet.SopId.HasValue ? filterSet.SopId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@startDate", filterSet.StartDate.HasValue
+                    ? filterSet.StartDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss")
+                    : DBNull.Value);
+                command.Parameters.AddWithValue("@endDate", filterSet.EndDate.HasValue
+                    ? filterSet.EndDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss")
+                    : DBNull.Value);
 
                 using SqliteDataReader reader = command.ExecuteReader();
 

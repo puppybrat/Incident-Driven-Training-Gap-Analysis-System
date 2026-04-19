@@ -2,7 +2,8 @@
 {
     public class ReportResult
     {
-        public List<FormattedResult> Results { get; set; } = new List<FormattedResult>();
-        public string OutputType { get; set; } = string.Empty;
+        public string PresetName { get; set; } = string.Empty;
+        public string OutputType { get; set; } = "Table";
+        public List<ReportRow> Rows { get; set; } = new();
     }
 }

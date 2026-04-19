@@ -7,8 +7,13 @@
  * Domain Class
  * 
  * Purpose:
- * This class represents the domain class for an incident within the Incident-Driven Training Gap Analysis System. It encapsulates the properties and behaviors associated with an incident, including its unique identifier, occurrence date and time, associated shift and equipment, and an optional reference to a Standard Operating Procedure (SOP). The class includes methods to validate the completeness of the incident data for creation and to check for the presence of a valid SOP reference. This domain class serves as a fundamental building block for representing incidents in the system and is used by the application layer to manage incident-related business logic.
- * 
+ * This class represents the domain class for an incident within the Incident-Driven Training Gap Analysis
+ * System. It encapsulates the properties and behaviors associated with an incident, including its unique
+ * identifier, occurrence date and time, associated shift and equipment, and an optional reference to a
+ * Standard Operating Procedure (SOP). The class includes methods to validate the completeness of the
+ * incident data for creation and to check for the presence of a valid SOP reference. This domain class
+ * serves as a fundamental building block for representing incidents in the system and is used by the 
+ * application layer to manage incident-related business logic.
 */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Domain
