@@ -7,6 +7,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         public MainForm()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Load += MainForm_Load;
         }
 
@@ -14,9 +15,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         {
             this.BackColor = Color.White;
             this.ForeColor = Color.Black;
-            this.Size = new(1000, 1000);
+            this.Size = new Size(900, 700);
             this.Text = "Incident Driven Training Gap Analysis System";
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MinimumSize = new Size(800, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             MenuStrip mainMenu = new();

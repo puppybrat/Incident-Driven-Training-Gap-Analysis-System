@@ -223,7 +223,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         {
             this.BackColor = Color.White;
 
-            Label titleLabel = new()
+            Label lblTitle = new()
             {
                 Text = "New Incident Entry",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
@@ -317,9 +317,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             Panel container = new();
             container.Dock = DockStyle.Fill;
             container.Controls.Add(formLayout);
-            container.Controls.Add(titleLabel);
+            container.Controls.Add(lblTitle);
 
-            titleLabel.Dock = DockStyle.Top;
+            lblTitle.Dock = DockStyle.Top;
             formLayout.Dock = DockStyle.Top;
 
             this.Controls.Add(container);

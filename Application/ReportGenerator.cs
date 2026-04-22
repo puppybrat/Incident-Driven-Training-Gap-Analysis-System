@@ -27,11 +27,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
 
             List<ReportRow> rows = reportRequest.PresetName switch
             {
-                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents),
-                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents),
-                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents),
-                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents),
-                _ => new List<ReportRow>()
+                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents, reportRequest),
+                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents, reportRequest),
+                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents, reportRequest),
+                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents, reportRequest),
+                "None" => BuildGroupedReport(filteredIncidents, reportRequest),
+                _ => BuildGroupedReport(filteredIncidents, reportRequest)
             };
 
             RuleEvaluator evaluator = new();
@@ -42,7 +43,150 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             {
                 PresetName = reportRequest.PresetName,
                 OutputType = reportRequest.OutputType,
+                IncludeLine = reportRequest.IncludeLine,
+                IncludeShift = reportRequest.IncludeShift,
+                IncludeEquipment = reportRequest.IncludeEquipment,
+                IncludeSop = reportRequest.IncludeSop,
                 Rows = rows
+            };
+        }
+
+        private List<ReportRow> BuildGroupedReport(List<Incident> incidents, ReportRequest reportRequest)
+        {
+            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+
+            Dictionary<int, string> shiftLookup = referenceData.Shifts.ToDictionary(s => s.ShiftId, s => s.Name);
+            Dictionary<int, Equipment> equipmentLookup = referenceData.Equipment.ToDictionary(e => e.EquipmentId, e => e);
+            Dictionary<int, string> lineLookup = referenceData.Lines.ToDictionary(l => l.LineId, l => l.Name);
+            Dictionary<int, string> sopLookup = referenceData.Sops.ToDictionary(s => s.SopId, s => s.Name);
+
+            List<ReportRow> rows = incidents
+                .Select(i =>
+                {
+                    string shiftName = shiftLookup.TryGetValue(i.ShiftId, out string? shift) ? shift : $"Shift {i.ShiftId}";
+                    string equipmentName = equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment)
+                        ? equipment.Name
+                        : $"Equipment {i.EquipmentId}";
+
+                    string lineName = "Unknown Line";
+                    if (equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipmentForLine) &&
+                        lineLookup.TryGetValue(equipmentForLine.LineId, out string? line))
+                    {
+                        lineName = line;
+                    }
+
+                    string sopName = "Missing SOP";
+                    if (i.SopId.HasValue && sopLookup.TryGetValue(i.SopId.Value, out string? sop))
+                    {
+                        sopName = sop;
+                    }
+
+                    string groupedLine = reportRequest.IncludeLine ? lineName : string.Empty;
+                    string groupedShift = reportRequest.IncludeShift ? shiftName : string.Empty;
+                    string groupedEquipment = reportRequest.IncludeEquipment ? equipmentName : string.Empty;
+                    string groupedSop = reportRequest.IncludeSop ? sopName : string.Empty;
+
+                    return new
+                    {
+                        Line = groupedLine,
+                        Shift = groupedShift,
+                        Equipment = groupedEquipment,
+                        SOP = groupedSop
+                    };
+                })
+                .GroupBy(x => new
+                {
+                    x.Line,
+                    x.Shift,
+                    x.Equipment,
+                    x.SOP
+                })
+                .Select(g => new ReportRow
+                {
+                    GroupValue = BuildGroupValue(
+                        g.Key.Line,
+                        g.Key.Shift,
+                        g.Key.Equipment,
+                        g.Key.SOP,
+                        reportRequest.GroupingType),
+                    Line = g.Key.Line,
+                    Shift = g.Key.Shift,
+                    Equipment = g.Key.Equipment,
+                    SOP = g.Key.SOP,
+                    IncidentCount = g.Count()
+                })
+                .ToList();
+
+            return rows
+                .OrderBy(r => GetPrimaryGroupSortValue(r, reportRequest.GroupingType))
+                .ThenByDescending(r => r.IncidentCount)
+                .ThenByDescending(r => r.IsFlagged)
+                .ThenBy(r => r.GroupValue)
+                .ThenBy(r => r.Line)
+                .ThenBy(r => r.Shift)
+                .ThenBy(r => r.Equipment)
+                .ThenBy(r => r.SOP)
+                .ToList();
+        }
+
+        private string BuildGroupValue(string line, string shift, string equipment, string sop, string groupingType)
+        {
+            List<string> parts = new();
+
+            void AddIfPresent(string value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    parts.Add(value);
+                }
+            }
+
+            switch (groupingType)
+            {
+                case "Shift":
+                    AddIfPresent(shift);
+                    AddIfPresent(line);
+                    AddIfPresent(equipment);
+                    AddIfPresent(sop);
+                    break;
+
+                case "Equipment":
+                    AddIfPresent(equipment);
+                    AddIfPresent(line);
+                    AddIfPresent(shift);
+                    AddIfPresent(sop);
+                    break;
+
+                case "SOP":
+                    AddIfPresent(sop);
+                    AddIfPresent(line);
+                    AddIfPresent(shift);
+                    AddIfPresent(equipment);
+                    break;
+
+                case "Line":
+                default:
+                    AddIfPresent(line);
+                    AddIfPresent(shift);
+                    AddIfPresent(equipment);
+                    AddIfPresent(sop);
+                    break;
+            }
+
+            return parts.Count > 0
+                ? string.Join(" | ", parts)
+                : "All Incidents";
+        }
+
+        private string GetPrimaryGroupSortValue(ReportRow row, string groupingType)
+        {
+            return groupingType switch
+            {
+                "Shift" => row.Shift,
+                "Equipment" => row.Equipment,
+                "SOP" => row.SOP,
+                "Line" => row.Line,
+                _ => row.GroupValue
             };
         }
 
@@ -67,18 +211,17 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         {
             List<ReportRow> rows = reportRequest.PresetName switch
             {
-                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents),
-                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents),
-                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents),
-                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents),
-                _ => new List<ReportRow>()
+                "Incidents per Shift by Line" => BuildIncidentsPerShiftByLine(filteredIncidents, reportRequest),
+                "Lines by missing SOP" => BuildLinesByMissingSop(filteredIncidents, reportRequest),
+                "Incidents per Equipment" => BuildIncidentsPerEquipment(filteredIncidents, reportRequest),
+                "Incidents per SOP Reference" => BuildIncidentsPerSopReference(filteredIncidents, reportRequest),
+                "None" => BuildGroupedReport(filteredIncidents, reportRequest),
+                _ => BuildGroupedReport(filteredIncidents, reportRequest)
             };
 
             return rows.Select(r => new AggregateResult
             {
-                GroupLabel = string.IsNullOrWhiteSpace(r.GroupSecondary)
-                    ? r.GroupPrimary
-                    : $"{r.GroupPrimary} - {r.GroupSecondary}",
+                GroupLabel = r.GroupValue,
                 IncidentCount = r.IncidentCount,
                 IsFlagged = r.IsFlagged
             }).ToList();
@@ -103,7 +246,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             {
                 result.Rows.Add(new ReportRow
                 {
-                    GroupPrimary = formatted.DisplayLabel,
+                    GroupValue = formatted.DisplayLabel,
+                    Line = formatted.DisplayLabel,
+                    Shift = string.Empty,
+                    Equipment = string.Empty,
+                    SOP = string.Empty,
                     IncidentCount = int.TryParse(formatted.DisplayValue, out int count) ? count : 0,
                     IsFlagged = false
                 });
@@ -112,125 +259,52 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             return result;
         }
 
-        private List<ReportRow> BuildIncidentsPerEquipment(List<Incident> incidents)
+        private List<ReportRow> BuildIncidentsGroupedByShift(List<Incident> incidents)
         {
-            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
-
-            Dictionary<int, string> equipmentLookup = referenceData.Equipment
-                .ToDictionary(e => e.EquipmentId, e => e.Name);
-
-            return incidents
-                .GroupBy(i => equipmentLookup.TryGetValue(i.EquipmentId, out string? equipmentName)
-                    ? equipmentName
-                    : $"Equipment {i.EquipmentId}")
-                .Select(g => new ReportRow
-                {
-                    GroupPrimary = g.Key,
-                    IncidentCount = g.Count()
-                })
-                .OrderByDescending(r => r.IncidentCount)
-                .ThenBy(r => r.GroupPrimary)
-                .ToList();
+            return BuildGroupedReport(incidents, new ReportRequest
+            {
+                GroupingType = "Shift",
+                IncludeLine = false,
+                IncludeShift = true,
+                IncludeEquipment = false,
+                IncludeSop = false
+            });
         }
 
-        private List<ReportRow> BuildIncidentsPerSopReference(List<Incident> incidents)
+        private List<ReportRow> BuildIncidentsGroupedByLine(List<Incident> incidents)
         {
-            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
-
-            Dictionary<int, string> sopLookup = referenceData.Sops
-                .ToDictionary(s => s.SopId, s => s.Name);
-
-            return incidents
-                .GroupBy(i =>
-                {
-                    if (i.SopId.HasValue && sopLookup.TryGetValue(i.SopId.Value, out string? sopName))
-                    {
-                        return sopName;
-                    }
-
-                    return "No SOP";
-                })
-                .Select(g => new ReportRow
-                {
-                    GroupPrimary = g.Key,
-                    IncidentCount = g.Count()
-                })
-                .OrderByDescending(r => r.IncidentCount)
-                .ThenBy(r => r.GroupPrimary)
-                .ToList();
+            return BuildGroupedReport(incidents, new ReportRequest
+            {
+                GroupingType = "Line",
+                IncludeLine = true,
+                IncludeShift = false,
+                IncludeEquipment = false,
+                IncludeSop = false
+            });
         }
 
-        private List<ReportRow> BuildLinesByMissingSop(List<Incident> incidents)
+        private List<ReportRow> BuildIncidentsPerEquipment(List<Incident> incidents, ReportRequest reportRequest)
         {
-            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
+            return BuildGroupedReport(incidents, reportRequest);
+        }
 
-            Dictionary<int, Equipment> equipmentLookup = referenceData.Equipment
-                .ToDictionary(e => e.EquipmentId, e => e);
+        private List<ReportRow> BuildIncidentsPerSopReference(List<Incident> incidents, ReportRequest reportRequest)
+        {
+            return BuildGroupedReport(incidents, reportRequest);
+        }
 
-            Dictionary<int, string> lineLookup = referenceData.Lines
-                .ToDictionary(l => l.LineId, l => l.Name);
-
-            return incidents
+        private List<ReportRow> BuildLinesByMissingSop(List<Incident> incidents, ReportRequest reportRequest)
+        {
+            List<Incident> incidentsWithoutSop = incidents
                 .Where(i => !i.SopId.HasValue)
-                .GroupBy(i =>
-                {
-                    if (equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment) &&
-                        lineLookup.TryGetValue(equipment.LineId, out string? lineName))
-                    {
-                        return lineName;
-                    }
-
-                    return "Unknown Line";
-                })
-                .Select(g => new ReportRow
-                {
-                    GroupPrimary = g.Key,
-                    IncidentCount = g.Count()
-                })
-                .OrderByDescending(r => r.IncidentCount)
-                .ThenBy(r => r.GroupPrimary)
                 .ToList();
+
+            return BuildGroupedReport(incidentsWithoutSop, reportRequest);
         }
 
-        private List<ReportRow> BuildIncidentsPerShiftByLine(List<Incident> incidents)
+        private List<ReportRow> BuildIncidentsPerShiftByLine(List<Incident> incidents, ReportRequest reportRequest)
         {
-            ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
-
-            Dictionary<int, string> shiftLookup = referenceData.Shifts
-                .ToDictionary(s => s.ShiftId, s => s.Name);
-
-            Dictionary<int, Equipment> equipmentLookup = referenceData.Equipment
-                .ToDictionary(e => e.EquipmentId, e => e);
-
-            Dictionary<int, string> lineLookup = referenceData.Lines
-                .ToDictionary(l => l.LineId, l => l.Name);
-
-            return incidents
-                .GroupBy(i =>
-                {
-                    string shiftName = shiftLookup.TryGetValue(i.ShiftId, out string? shiftNameValue)
-                        ? shiftNameValue
-                        : $"Shift {i.ShiftId}";
-
-                    string lineName = "Unknown Line";
-
-                    if (equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment) &&
-                        lineLookup.TryGetValue(equipment.LineId, out string? resolvedLine))
-                    {
-                        lineName = resolvedLine;
-                    }
-
-                    return new { Shift = shiftName, Line = lineName };
-                })
-                .Select(g => new ReportRow
-                {
-                    GroupPrimary = g.Key.Shift,
-                    GroupSecondary = g.Key.Line,
-                    IncidentCount = g.Count()
-                })
-                .OrderBy(r => r.GroupPrimary)
-                .ThenBy(r => r.GroupSecondary)
-                .ToList();
+            return BuildGroupedReport(incidents, reportRequest);
         }
     }
 }

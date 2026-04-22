@@ -60,17 +60,19 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
                 }
 
                 StringBuilder csvBuilder = new();
-                csvBuilder.AppendLine("PresetName,OutputType,GroupPrimary,GroupSecondary,IncidentCount,IsFlagged");
+                csvBuilder.AppendLine("PresetName,OutputType,Line,Shift,Equipment,SOP,Date,IncidentCount,Status");
 
                 foreach (ReportRow row in reportResult.Rows)
                 {
                     csvBuilder.AppendLine(string.Join(",",
                         EscapeCsv(reportResult.PresetName),
                         EscapeCsv(reportResult.OutputType),
-                        EscapeCsv(row.GroupPrimary),
-                        EscapeCsv(row.GroupSecondary ?? string.Empty),
+                        EscapeCsv(row.Line),
+                        EscapeCsv(row.Shift),
+                        EscapeCsv(row.Equipment),
+                        EscapeCsv(row.SOP),
                         row.IncidentCount,
-                        row.IsFlagged));
+                        EscapeCsv(row.Status)));
                 }
 
                 return WriteCsvFile(filePath, csvBuilder.ToString());

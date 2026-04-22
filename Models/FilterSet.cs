@@ -6,6 +6,7 @@
         public int? ShiftId { get; set; }
         public int? EquipmentId { get; set; }
         public int? SopId { get; set; }
+        public bool RequireMissingSop { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
     }

@@ -11,13 +11,20 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
     {
         private readonly ReportGenerator _reportGenerator = new();
         private readonly IncidentManager _incidentManager = new();
+        private readonly RuleEvaluator _ruleEvaluator = new();
 
         private ComboBox _cboPreset = null!;
+        private ComboBox _cboGroupingType = null!;
         private ComboBox _cboLine = null!;
         private ComboBox _cboShift = null!;
         private ComboBox _cboEquipment = null!;
         private ComboBox _cboSop = null!;
         private ComboBox _cboOutput = null!;
+
+        private CheckBox _chkIncludeLine = null!;
+        private CheckBox _chkIncludeShift = null!;
+        private CheckBox _chkIncludeEquipment = null!;
+        private CheckBox _chkIncludeSop = null!;
 
         private CheckBox _chkUseDateRange = null!;
         private DateTimePicker _dtpStart = null!;
@@ -31,6 +38,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         private Label _lblSummary = null!;
 
         private ReportResult? _currentReportResult;
+        private bool _isApplyingPreset;
 
         private sealed class ComboBoxItem
         {
@@ -52,6 +60,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             BuildLayout();
             LoadReportPresets();
             LoadFilterOptions();
+            ApplyRuleConfigDefaults();
             ApplyPresetToControls();
             ClearResults();
         }
@@ -59,16 +68,23 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         public void LoadReportPresets()
         {
             _cboPreset.Items.Clear();
+            _cboPreset.Items.Add("None");
             _cboPreset.Items.Add("Incidents per Shift by Line");
             _cboPreset.Items.Add("Lines by missing SOP");
             _cboPreset.Items.Add("Incidents per Equipment");
             _cboPreset.Items.Add("Incidents per SOP Reference");
-            _cboPreset.SelectedIndex = 0;
+            _cboPreset.SelectedItem = "None";
         }
 
         public void LoadFilterOptions()
         {
             ReferenceDataSet referenceData = _incidentManager.GetAllReferenceData();
+
+            _cboGroupingType.Items.Clear();
+            _cboGroupingType.Items.Add("Shift");
+            _cboGroupingType.Items.Add("Line");
+            _cboGroupingType.Items.Add("Equipment");
+            _cboGroupingType.Items.Add("SOP");
 
             _cboLine.Items.Clear();
             _cboShift.Items.Clear();
@@ -79,6 +95,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _cboShift.Items.Add("All");
             _cboEquipment.Items.Add("All");
             _cboSop.Items.Add("All");
+            _cboSop.Items.Add("Missing SOP");
 
             foreach (Line line in referenceData.Lines.OrderBy(l => l.Name))
             {
@@ -111,29 +128,145 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _cboOutput.SelectedIndex = 0;
         }
 
+        private void SelectMissingSopOption()
+        {
+            for (int i = 0; i < _cboSop.Items.Count; i++)
+            {
+                if (string.Equals(_cboSop.Items[i]?.ToString(), "Missing SOP", StringComparison.OrdinalIgnoreCase))
+                {
+                    _cboSop.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        private void ApplyRuleConfigDefaults()
+        {
+            RuleConfig ruleConfig = _ruleEvaluator.LoadCurrentRuleConfig();
+
+            if (_cboGroupingType.Items.Contains(ruleConfig.GroupingType))
+            {
+                _cboGroupingType.SelectedItem = ruleConfig.GroupingType;
+            }
+            else if (_cboGroupingType.Items.Count > 0)
+            {
+                _cboGroupingType.SelectedIndex = 0;
+            }
+
+            _chkUseDateRange.Checked = true;
+
+            int daysBack = ruleConfig.TimeWindow switch
+            {
+                "7 days" => 7,
+                "30 days" => 30,
+                "90 days" => 90,
+                _ => 30
+            };
+
+            _dtpEnd.Value = DateTime.Today;
+            _dtpStart.Value = DateTime.Today.AddDays(-daysBack);
+        }
+
         public void ApplyPresetToControls()
         {
-            string preset = _cboPreset.SelectedItem?.ToString() ?? string.Empty;
-
-            ResetFiltersOnly();
-
-            switch (preset)
+            if (_cboPreset.SelectedItem == null)
             {
-                case "Incidents per Shift by Line":
-                    _cboOutput.SelectedItem = "Table";
-                    break;
+                return;
+            }
 
-                case "Lines by missing SOP":
-                    _cboOutput.SelectedItem = "Table";
-                    break;
+            string preset = _cboPreset.SelectedItem.ToString() ?? string.Empty;
 
-                case "Incidents per Equipment":
-                    _cboOutput.SelectedItem = "Table";
-                    break;
+            if (preset == "Custom")
+            {
+                return;
+            }
 
-                case "Incidents per SOP Reference":
-                    _cboOutput.SelectedItem = "Table";
-                    break;
+            _isApplyingPreset = true;
+
+            try
+            {
+                ResetFiltersOnly();
+
+                switch (preset)
+                {
+                    case "None":
+                        break;
+
+                    case "Incidents per Shift by Line":
+                        _cboGroupingType.SelectedItem = "Line";
+                        _chkIncludeLine.Checked = true;
+                        _chkIncludeShift.Checked = true;
+                        _chkIncludeEquipment.Checked = false;
+                        _chkIncludeSop.Checked = false;
+                        _cboOutput.SelectedItem = "Table";
+                        break;
+
+                    case "Lines by missing SOP":
+                        _cboGroupingType.SelectedItem = "Line";
+                        _chkIncludeLine.Checked = true;
+                        _chkIncludeShift.Checked = false;
+                        _chkIncludeEquipment.Checked = false;
+                        _chkIncludeSop.Checked = true;
+                        SelectMissingSopOption();
+                        _cboOutput.SelectedItem = "Table";
+                        break;
+
+                    case "Incidents per Equipment":
+                        _cboGroupingType.SelectedItem = "Equipment";
+                        _chkIncludeLine.Checked = false;
+                        _chkIncludeShift.Checked = false;
+                        _chkIncludeEquipment.Checked = true;
+                        _chkIncludeSop.Checked = false;
+                        _cboOutput.SelectedItem = "Table";
+                        break;
+
+                    case "Incidents per SOP Reference":
+                        _cboGroupingType.SelectedItem = "SOP";
+                        _chkIncludeLine.Checked = false;
+                        _chkIncludeShift.Checked = false;
+                        _chkIncludeEquipment.Checked = false;
+                        _chkIncludeSop.Checked = true;
+                        _cboOutput.SelectedItem = "Table";
+                        break;
+                }
+            }
+            finally
+            {
+                _isApplyingPreset = false;
+            }
+        }
+
+        private void MarkPresetAsCustom()
+        {
+            if (_isApplyingPreset)
+            {
+                return;
+            }
+
+            if (_cboPreset.SelectedItem == null)
+            {
+                return;
+            }
+
+            string currentPreset = _cboPreset.SelectedItem.ToString() ?? string.Empty;
+
+            if (currentPreset != "None" && currentPreset != "Custom")
+            {
+                _isApplyingPreset = true;
+
+                try
+                {
+                    if (!_cboPreset.Items.Contains("Custom"))
+                    {
+                        _cboPreset.Items.Add("Custom");
+                    }
+
+                    _cboPreset.SelectedItem = "Custom";
+                }
+                finally
+                {
+                    _isApplyingPreset = false;
+                }
             }
         }
 
@@ -204,8 +337,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 Text = "Generate Report",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 AutoSize = true,
+                Padding = new Padding(20),
                 Dock = DockStyle.Top,
-                Padding = new Padding(20)
+                TextAlign = ContentAlignment.MiddleCenter
             };
 
             TableLayoutPanel filterPanel = new()
@@ -220,23 +354,66 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             filterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
             _cboPreset = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+            _cboGroupingType = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             _cboLine = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             _cboShift = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             _cboEquipment = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             _cboSop = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             _cboOutput = new ComboBox { Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
 
+            _chkIncludeLine = new CheckBox
+            {
+                Text = "Include Line",
+                AutoSize = true,
+                Checked = true
+            };
+
+            _chkIncludeShift = new CheckBox
+            {
+                Text = "Include Shift",
+                AutoSize = true,
+                Checked = true
+            };
+
+            _chkIncludeEquipment = new CheckBox
+            {
+                Text = "Include Equipment",
+                AutoSize = true,
+                Checked = true
+            };
+
+            _chkIncludeSop = new CheckBox
+            {
+                Text = "Include SOP",
+                AutoSize = true,
+                Checked = true
+            };
+
+            FlowLayoutPanel groupingFieldsPanel = new()
+            {
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                WrapContents = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                Margin = new Padding(0)
+            };
+            groupingFieldsPanel.Controls.Add(_chkIncludeLine);
+            groupingFieldsPanel.Controls.Add(_chkIncludeShift);
+            groupingFieldsPanel.Controls.Add(_chkIncludeEquipment);
+            groupingFieldsPanel.Controls.Add(_chkIncludeSop);
+
             _chkUseDateRange = new CheckBox
             {
                 Text = "Use date range",
-                AutoSize = true
+                AutoSize = true,
+                Checked = true
             };
 
             _dtpStart = new DateTimePicker
             {
                 Format = DateTimePickerFormat.Short,
                 Width = 120,
-                Value = DateTime.Today.AddDays(-30)
+                Value = DateTime.Today.AddDays(-7)
             };
 
             _dtpEnd = new DateTimePicker
@@ -246,16 +423,68 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 Value = DateTime.Today
             };
 
-            FlowLayoutPanel datePanel = new()
+            TableLayoutPanel datePanel = new()
             {
                 AutoSize = true,
-                WrapContents = false
+                Dock = DockStyle.Top,
+                ColumnCount = 1,
+                RowCount = 3,
+                Margin = new Padding(0)
             };
-            datePanel.Controls.Add(_chkUseDateRange);
-            datePanel.Controls.Add(new Label { Text = "Start", AutoSize = true, Padding = new Padding(10, 6, 0, 0) });
-            datePanel.Controls.Add(_dtpStart);
-            datePanel.Controls.Add(new Label { Text = "End", AutoSize = true, Padding = new Padding(10, 6, 0, 0) });
-            datePanel.Controls.Add(_dtpEnd);
+
+            datePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            datePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            datePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            datePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            FlowLayoutPanel dateRangeCheckRow = new()
+            {
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                WrapContents = false,
+                Margin = new Padding(0)
+            };
+            dateRangeCheckRow.Controls.Add(_chkUseDateRange);
+
+            FlowLayoutPanel startRow = new()
+            {
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                WrapContents = false,
+                Margin = new Padding(0)
+            };
+            startRow.Controls.Add(new Label
+            {
+                Text = "Start",
+                AutoSize = true,
+                Width = 45,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(0, 6, 6, 0)
+            });
+            _dtpStart.Dock = DockStyle.None;
+            startRow.Controls.Add(_dtpStart);
+
+            FlowLayoutPanel endRow = new()
+            {
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                WrapContents = false,
+                Margin = new Padding(0)
+            };
+            endRow.Controls.Add(new Label
+            {
+                Text = "End",
+                AutoSize = true,
+                Width = 45,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(0, 6, 6, 0)
+            });
+            _dtpEnd.Dock = DockStyle.None;
+            endRow.Controls.Add(_dtpEnd);
+
+            datePanel.Controls.Add(dateRangeCheckRow, 0, 0);
+            datePanel.Controls.Add(startRow, 0, 1);
+            datePanel.Controls.Add(endRow, 0, 2);
 
             _btnGenerate = new Button
             {
@@ -281,26 +510,32 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             filterPanel.Controls.Add(new Label { Text = "Preset", AutoSize = true }, 0, 0);
             filterPanel.Controls.Add(_cboPreset, 1, 0);
 
-            filterPanel.Controls.Add(new Label { Text = "Line", AutoSize = true }, 0, 1);
-            filterPanel.Controls.Add(_cboLine, 1, 1);
+            filterPanel.Controls.Add(new Label { Text = "Grouping Type", AutoSize = true }, 0, 1);
+            filterPanel.Controls.Add(_cboGroupingType, 1, 1);
 
-            filterPanel.Controls.Add(new Label { Text = "Shift", AutoSize = true }, 0, 2);
-            filterPanel.Controls.Add(_cboShift, 1, 2);
+            filterPanel.Controls.Add(new Label { Text = "Included Fields", AutoSize = true }, 0, 2);
+            filterPanel.Controls.Add(groupingFieldsPanel, 1, 2);
 
-            filterPanel.Controls.Add(new Label { Text = "Equipment", AutoSize = true }, 0, 3);
-            filterPanel.Controls.Add(_cboEquipment, 1, 3);
+            filterPanel.Controls.Add(new Label { Text = "Line", AutoSize = true }, 0, 3);
+            filterPanel.Controls.Add(_cboLine, 1, 3);
 
-            filterPanel.Controls.Add(new Label { Text = "SOP", AutoSize = true }, 0, 4);
-            filterPanel.Controls.Add(_cboSop, 1, 4);
+            filterPanel.Controls.Add(new Label { Text = "Shift", AutoSize = true }, 0, 4);
+            filterPanel.Controls.Add(_cboShift, 1, 4);
 
-            filterPanel.Controls.Add(new Label { Text = "Date Range", AutoSize = true }, 0, 5);
-            filterPanel.Controls.Add(datePanel, 1, 5);
+            filterPanel.Controls.Add(new Label { Text = "Equipment", AutoSize = true }, 0, 5);
+            filterPanel.Controls.Add(_cboEquipment, 1, 5);
 
-            filterPanel.Controls.Add(new Label { Text = "Output Mode", AutoSize = true }, 0, 6);
-            filterPanel.Controls.Add(_cboOutput, 1, 6);
+            filterPanel.Controls.Add(new Label { Text = "SOP", AutoSize = true }, 0, 6);
+            filterPanel.Controls.Add(_cboSop, 1, 6);
 
-            filterPanel.Controls.Add(new Label(), 0, 7);
-            filterPanel.Controls.Add(buttonPanel, 1, 7);
+            filterPanel.Controls.Add(new Label { Text = "Date Range", AutoSize = true }, 0, 7);
+            filterPanel.Controls.Add(datePanel, 1, 7);
+
+            filterPanel.Controls.Add(new Label { Text = "Output Mode", AutoSize = true }, 0, 8);
+            filterPanel.Controls.Add(_cboOutput, 1, 8);
+
+            filterPanel.Controls.Add(new Label(), 0, 9);
+            filterPanel.Controls.Add(buttonPanel, 1, 9);
 
             _lblSummary = new Label
             {
@@ -333,12 +568,39 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             resultsPanel.Controls.Add(_chartResults);
             resultsPanel.Controls.Add(_gridResults);
 
-            Controls.Add(resultsPanel);
-            Controls.Add(_lblSummary);
-            Controls.Add(filterPanel);
-            Controls.Add(lblTitle);
+            Panel container = new()
+            {
+                Dock = DockStyle.Fill
+            };
+
+            container.Controls.Add(resultsPanel);
+            container.Controls.Add(_lblSummary);
+            container.Controls.Add(filterPanel);
+            container.Controls.Add(lblTitle);
+
+            lblTitle.Dock = DockStyle.Top;
+            filterPanel.Dock = DockStyle.Top;
+            _lblSummary.Dock = DockStyle.Top;
+            resultsPanel.Dock = DockStyle.Fill;
+
+            Controls.Add(container);
 
             _cboPreset.SelectedIndexChanged += (s, e) => ApplyPresetToControls();
+
+            _cboGroupingType.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _cboLine.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _cboShift.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _cboEquipment.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _cboSop.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _cboOutput.SelectedIndexChanged += (s, e) => MarkPresetAsCustom();
+            _chkIncludeLine.CheckedChanged += (s, e) => MarkPresetAsCustom();
+            _chkIncludeShift.CheckedChanged += (s, e) => MarkPresetAsCustom();
+            _chkIncludeEquipment.CheckedChanged += (s, e) => MarkPresetAsCustom();
+            _chkIncludeSop.CheckedChanged += (s, e) => MarkPresetAsCustom();
+            _chkUseDateRange.CheckedChanged += (s, e) => MarkPresetAsCustom();
+            _dtpStart.ValueChanged += (s, e) => MarkPresetAsCustom();
+            _dtpEnd.ValueChanged += (s, e) => MarkPresetAsCustom();
+
             _btnGenerate.Click += (s, e) => ProcessReportRequest();
             _btnClear.Click += (s, e) =>
             {
@@ -349,16 +611,27 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
         private ReportRequest BuildReportRequest()
         {
+            bool requireMissingSop = string.Equals(
+                _cboSop.SelectedItem?.ToString(),
+                "Missing SOP",
+                StringComparison.OrdinalIgnoreCase);
+
             return new ReportRequest
             {
                 PresetName = _cboPreset.SelectedItem?.ToString() ?? string.Empty,
+                GroupingType = _cboGroupingType.SelectedItem?.ToString() ?? string.Empty,
                 OutputType = _cboOutput.SelectedItem?.ToString() ?? "Table",
+                IncludeLine = _chkIncludeLine.Checked,
+                IncludeShift = _chkIncludeShift.Checked,
+                IncludeEquipment = _chkIncludeEquipment.Checked,
+                IncludeSop = _chkIncludeSop.Checked,
                 Filters = new FilterSet
                 {
                     LineId = GetSelectedId(_cboLine),
                     ShiftId = GetSelectedId(_cboShift),
                     EquipmentId = GetSelectedId(_cboEquipment),
-                    SopId = GetSelectedId(_cboSop),
+                    SopId = requireMissingSop ? null : GetSelectedId(_cboSop),
+                    RequireMissingSop = requireMissingSop,
                     StartDate = _chkUseDateRange.Checked ? _dtpStart.Value.Date : null,
                     EndDate = _chkUseDateRange.Checked ? _dtpEnd.Value.Date : null
                 }
@@ -378,9 +651,34 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             if (_cboSop.Items.Count > 0) _cboSop.SelectedIndex = 0;
             if (_cboOutput.Items.Count > 0) _cboOutput.SelectedIndex = 0;
 
-            _chkUseDateRange.Checked = false;
-            _dtpStart.Value = DateTime.Today.AddDays(-30);
+            _chkIncludeLine.Checked = true;
+            _chkIncludeShift.Checked = true;
+            _chkIncludeEquipment.Checked = true;
+            _chkIncludeSop.Checked = true;
+
+            _chkUseDateRange.Checked = true;
+
+            RuleConfig ruleConfig = _ruleEvaluator.LoadCurrentRuleConfig();
+
+            if (_cboGroupingType.Items.Contains(ruleConfig.GroupingType))
+            {
+                _cboGroupingType.SelectedItem = ruleConfig.GroupingType;
+            }
+            else if (_cboGroupingType.Items.Count > 0)
+            {
+                _cboGroupingType.SelectedIndex = 0;
+            }
+
+            int daysBack = ruleConfig.TimeWindow switch
+            {
+                "7 days" => 7,
+                "30 days" => 30,
+                "90 days" => 90,
+                _ => 30
+            };
+
             _dtpEnd.Value = DateTime.Today;
+            _dtpStart.Value = DateTime.Today.AddDays(-daysBack);
         }
 
         private void DisplayTableResults(ReportResult reportResult)
@@ -390,44 +688,63 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
             _gridResults.AutoGenerateColumns = false;
             _gridResults.Columns.Clear();
+            _gridResults.DataSource = null;
 
-            _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+            if (reportResult.IncludeLine)
             {
-                DataPropertyName = "GroupPrimary",
-                HeaderText = "Group",
-                FillWeight = 35
-            });
+                _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = "Line",
+                    HeaderText = "Line",
+                    FillWeight = 14
+                });
+            }
 
-            _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+            if (reportResult.IncludeShift)
             {
-                DataPropertyName = "GroupSecondary",
-                HeaderText = "Subgroup",
-                FillWeight = 35
-            });
+                _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = "Shift",
+                    HeaderText = "Shift",
+                    FillWeight = 14
+                });
+            }
+
+            if (reportResult.IncludeEquipment)
+            {
+                _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = "Equipment",
+                    HeaderText = "Equipment",
+                    FillWeight = 18
+                });
+            }
+
+            if (reportResult.IncludeSop)
+            {
+                _gridResults.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = "SOP",
+                    HeaderText = "SOP",
+                    FillWeight = 18
+                });
+            }
 
             _gridResults.Columns.Add(new DataGridViewTextBoxColumn
             {
                 DataPropertyName = "IncidentCount",
                 HeaderText = "Incident Count",
-                FillWeight = 15
+                FillWeight = 12
             });
 
             _gridResults.Columns.Add(new DataGridViewTextBoxColumn
             {
                 DataPropertyName = "Status",
                 HeaderText = "Status",
-                FillWeight = 15
+                FillWeight = 10
             });
 
-            _gridResults.DataSource = reportResult.Rows
-                .Select(r => new
-                {
-                    r.GroupPrimary,
-                    r.GroupSecondary,
-                    r.IncidentCount,
-                    Status = r.IsFlagged ? "Flagged" : "Normal"
-                })
-                .ToList();
+            _gridResults.DataSource = reportResult.Rows;
         }
 
         private void DisplayGraphResults(ReportResult reportResult)
@@ -436,9 +753,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _chartResults.Visible = true;
 
             string[] labels = reportResult.Rows
-                .Select(r => string.IsNullOrWhiteSpace(r.GroupSecondary)
-                    ? r.GroupPrimary
-                    : $"{r.GroupPrimary} - {r.GroupSecondary}")
+                .Select(r => r.GroupValue)
                 .ToArray();
 
             int[] values = reportResult.Rows
@@ -452,18 +767,18 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                     Values = values,
                     Name = "Incident Count"
                 }
-                    };
+            };
 
-                    _chartResults.XAxes = new[]
-                    {
+            _chartResults.XAxes = new[]
+            {
                 new Axis
                 {
                     Labels = labels
                 }
             };
 
-                    _chartResults.YAxes = new[]
-                    {
+            _chartResults.YAxes = new[]
+            {
                 new Axis
                 {
                     Name = "Incident Count"
