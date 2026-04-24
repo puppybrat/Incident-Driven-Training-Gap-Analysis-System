@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="../IncidentDrivenTrainingGapAnalysisSystem.Tests/IncidentDrivenTrainingGapAnalysisSystem.Tests.csproj" Id="074917a9-c10e-49a4-b461-8aa8eecce3a6" />
   <Project Path="Incident-Driven Training Gap Analysis System/IncidentDrivenTrainingGapAnalysisSystem.csproj" />
+  <Project Path="IncidentDrivenTrainingGapAnalysisSystem.Tests/IncidentDrivenTrainingGapAnalysisSystem.Tests.csproj" />
 </Solution>

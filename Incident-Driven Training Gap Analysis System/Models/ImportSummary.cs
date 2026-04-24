@@ -7,20 +7,18 @@
  * Layer: Model
  * 
  * Purpose:
- * This class represents the outcome of an import operation.
- * It stores the number of inserted and rejected rows, along with
- * any messages describing validation issues or the final import result.
+ * This class represents the result of an import operation, including inserted and rejected row counts.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents the outcome of a CSV import operation, including record counts and detail messages.
+    /// Represents the result of an import operation.
     /// </summary>
     public class ImportSummary
     {
         /// <summary>
-        /// Gets or sets the number of rows successfully inserted.
+        /// Gets or sets the number of records inserted during import.
         /// </summary>
         public int InsertedCount { get; set; }
 
@@ -30,7 +28,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         public int RejectedCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the messages describing validation issues and overall import results.
+        /// Gets or sets the result messages describing the import result.
         /// </summary>
         public List<string> Messages { get; set; } = new();
 

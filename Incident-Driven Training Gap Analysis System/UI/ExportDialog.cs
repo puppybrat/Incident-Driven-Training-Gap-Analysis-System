@@ -7,10 +7,9 @@
  * Layer: User Interface Layer
  * 
  * Purpose:
- * This form allows the user to export either incident data or the currently generated
- * report data to a CSV file. Incident data exports incident records, while report data
- * exports the underlying report rows regardless of whether the report is currently
- * displayed as a table or graph.
+ * This form allows the user to export incident data or the current report result
+ * to a CSV file. Report export uses the generated report rows even when the
+ * report is displayed as a graph.
  */
 
 using Incident_Driven_Training_Gap_Analysis_System.Application;
@@ -18,6 +17,9 @@ using Incident_Driven_Training_Gap_Analysis_System.Models;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
+    /// <summary>
+    /// Provides the dialog used to export incident records or the current report result to CSV.
+    /// </summary>
     public partial class ExportDialog : Form
     {
         private readonly ExportManager _exportManager;
@@ -106,7 +108,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays the outcome of an export attempt using the supplied export summary.
+        /// Displays the export result message to the user.
         /// </summary>
         /// <param name="summary">The export result to display.</param>
         private void ShowExportResults(ExportSummary summary)
@@ -122,6 +124,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 icon);
         }
 
+        /// <summary>
+        /// Exports the selected data type and returns the export result.
+        /// </summary>
+        /// <param name="filePath">The destination CSV file path.</param>
+        /// <returns>The export result summary.</returns>
         private ExportSummary GetExportSummary(string filePath)
         {
             if (_rdoIncidentData.Checked)
@@ -138,7 +145,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 };
             }
 
-            return _exportManager.ExportReport(filePath, _currentReportResult);
+            return ExportManager.ExportReport(filePath, _currentReportResult);
         }
 
         /// <summary>
@@ -259,8 +266,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Updates the report export message and export button state based on whether
-        /// the current report contains exportable row data.
+        /// Updates the report export message and export button state based on report availability.
         /// </summary>
         private void UpdateReportAvailabilityState()
         {

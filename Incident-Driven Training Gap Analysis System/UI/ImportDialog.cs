@@ -17,6 +17,9 @@ using Incident_Driven_Training_Gap_Analysis_System.Models;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
+    /// <summary>
+    /// Provides the dialog used to select and import incident data from a CSV file.
+    /// </summary>
     public partial class ImportDialog : Form
     {
         private readonly ImportManager _importManager;
@@ -99,8 +102,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays a message box summarizing the most recent import attempt, including inserted and rejected counts
-        /// and any validation or processing messages returned by the import operation.
+        /// Displays the most recent import result, including inserted rows, rejected rows, and detail messages.
         /// </summary>
         private void ShowImportResults()
         {

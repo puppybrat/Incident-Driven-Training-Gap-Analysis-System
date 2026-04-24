@@ -15,8 +15,7 @@
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents the outcome of a validation process, including success status
-    /// and any associated error messages.
+    /// Represents the result of a validation operation, including success status and error messages.
     /// </summary>
     public class ValidationResult
     {

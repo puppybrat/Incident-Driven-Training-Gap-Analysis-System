@@ -7,14 +7,10 @@
  * Layer: Application Layer
  * 
  * Purpose:
- * This class is responsible for managing the business logic related to report generation within
- * the Incident-Driven Training Gap Analysis System. It retrieves data from the data persistence layer
- * and returns it for use by the UI layer. It receives report requests from the UI layer, validates them,
- * and then calls supporting methods to generate the report. The ReportGenerator
- * serves as an intermediary between the UI and data layers for the life cycle of a report
- * coordinating the report generation process and ensuring that data is retrieved, 
- * grouped, and transformed according to the specified request.
-*/
+ * This class generates reports from incident data. It applies filters,
+ * groups matching incidents, builds report rows, and returns the final
+ * report result for UI display or export.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
@@ -23,9 +19,7 @@ using Incident_Driven_Training_Gap_Analysis_System.Models;
 namespace Incident_Driven_Training_Gap_Analysis_System.Application
 {
     /// <summary>
-    /// Provides methods for generating incident reports based on configurable filters, grouping options, and report
-    /// presets. Supports building report data from incident and reference data repositories, applying business rules,
-    /// and returning structured report results.
+    /// Generates incident reports using filters, grouping options, presets, and rule evaluation.
     /// </summary>
     public class ReportGenerator
     {
@@ -33,7 +27,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         private readonly ReferenceDataRepository _referenceDataRepository;
 
         /// <summary>
-        /// Default constructor that initializes the ReportGenerator with a new instance of IncidentRepository and ReferenceDataRepository.
+        /// Initializes report generation using the default incident and reference data repositories.
         /// </summary>
         public ReportGenerator()
         {
@@ -42,9 +36,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes report generation with a database manager, primarily for controlled database access in tests.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager used to create report repositories.</param>
         public ReportGenerator(DatabaseManager databaseManager)
         {
             _incidentRepository = new IncidentRepository(databaseManager);
@@ -52,14 +46,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Coordinates the full report generation workflow.
-        /// Applies filters, builds grouped report rows based on the selected preset and grouping options,
-        /// evaluates rule thresholds, and returns a populated ReportResult.
-        /// </summary> 
-        /// <param name="reportRequest">The parameters that define the report to generate, including filters, output type, and included fields.
-        /// Cannot be null.</param>
-        /// <returns>A ReportResult object containing the generated report data and metadata as specified by the request.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if reportRequest is null.</exception>
+        /// Generates a report by applying filters, building grouped rows, and evaluating rule thresholds.
+        /// </summary>
+        /// <param name="reportRequest">The filters, grouping, output type, and included fields for the report.</param>
+        /// <returns>The generated report result with rows and output metadata.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="reportRequest"/> is null.</exception>
         public ReportResult GenerateReport(ReportRequest reportRequest)
         {
             if (reportRequest == null)
@@ -87,10 +78,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Applies the filter set from the report request and retrieves matching incidents from the repository.
+        /// Retrieves incidents that match the report request filters.
         /// </summary>
-        /// <param name="reportRequest">The report request containing the filter criteria to apply. Cannot be null.</param>
-        /// <returns>A list of incidents that satisfy the specified filters. The list is empty if no incidents match the criteria.</returns>
+        /// <param name="reportRequest">The report request containing the filters.</param>
+        /// <returns>A list of matching incidents.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="reportRequest"/> is null.</exception>
         public List<Incident> ApplyFilters(ReportRequest reportRequest)
         {
@@ -104,13 +95,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Selects the appropriate report-building strategy based on the selected preset.
-        /// Routes to preset-specific logic or the general grouped report builder.
+        /// Selects preset-specific report logic or the general grouped report builder.
         /// </summary>
-        /// <param name="incidents">The collection of incidents to include in the report. Cannot be null.</param>
-        /// <param name="reportRequest">The report request specifying the preset and additional parameters for report generation. Cannot be null.</param>
-        /// <returns>A list of report rows generated according to the selected report preset and the provided incidents. The list
-        /// may be empty if no rows are generated.</returns>
+        /// <param name="incidents">The incidents to include in the report.</param>
+        /// <param name="reportRequest">The report request used to choose the row-building strategy.</param>
+        /// <returns>The generated report rows.</returns>
         private List<ReportRow> BuildRows(List<Incident> incidents, ReportRequest reportRequest)
         {
             return reportRequest.PresetName switch
@@ -125,13 +114,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Filters incidents to those without an associated SOP and builds grouped report rows.
-        /// Used for the "Incidents per missing SOP by Line" preset.
+        /// Builds grouped report rows for incidents that do not have an SOP reference.
         /// </summary>
-        /// <param name="incidents">The collection of incidents to evaluate for missing SOP associations. Cannot be null.</param>
-        /// <param name="reportRequest">The report request parameters that define how the report rows are generated. Cannot be null.</param>
-        /// <returns>A list of report rows representing incidents without an associated SOP. The list will be empty if no such
-        /// incidents are found.</returns>
+        /// <param name="incidents">The incidents to check for missing SOP references.</param>
+        /// <param name="reportRequest">The report request used to build the grouped rows.</param>
+        /// <returns>Report rows for incidents without SOP references.</returns>
         private List<ReportRow> BuildLinesByMissingSop(List<Incident> incidents, ReportRequest reportRequest)
         {
             List<Incident> incidentsWithoutSop = incidents
@@ -142,20 +129,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Builds grouped report rows by:
-        /// - Resolving reference data (line, shift, equipment, SOP)
-        /// - Applying include flags from the report request
-        /// - Grouping incidents by selected fields
-        /// - Counting incidents per group
-        /// - Sorting results for display
+        /// Builds grouped report rows from matching incidents and selected report fields.
         /// </summary>
-        /// <param name="incidents">The list of incidents to include in the report. Each incident is grouped according to the criteria specified
-        /// in the report request.</param>
-        /// <param name="reportRequest">The report request specifying which grouping options to apply, such as including line, shift, equipment, or
-        /// SOP information.</param>
-        /// <returns>A list of report rows, where each row represents a group of incidents and includes group values and the
-        /// count of incidents in that group.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if an incident references an equipment or line that does not exist in the reference data.</exception>
+        /// <param name="incidents">The incidents to include.</param>
+        /// <param name="reportRequest">The report configuration to apply.</param>
+        /// <returns>A list of grouped report rows.</returns>
         private List<ReportRow> BuildGroupedReport(List<Incident> incidents, ReportRequest reportRequest)
         {
             ReferenceDataSet referenceData = _referenceDataRepository.GetAllReferenceData();
@@ -239,18 +217,14 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Constructs the display label for a grouped report row based on the selected grouping type.
-        /// Combines relevant fields in priority order to form a readable group identifier.
+        /// Builds the display label for a grouped report row.
         /// </summary>
-        /// <param name="line">The line identifier to include in the group value. Can be null or whitespace if not applicable.</param>
-        /// <param name="shift">The shift identifier to include in the group value. Can be null or whitespace if not applicable.</param>
-        /// <param name="equipment">The equipment identifier to include in the group value. Can be null or whitespace if not applicable.</param>
-        /// <param name="sop">The SOP (Standard Operating Procedure) identifier to include in the group value. Can be null or whitespace
-        /// if not applicable.</param>
-        /// <param name="groupingType">The grouping type that determines the order in which the values are combined. Supported values are "Shift",
-        /// "Equipment", "SOP", and "Line". If an unsupported value is provided, "Line" is used as the default.</param>
-        /// <returns>A string representing the combined group value based on the specified grouping type and non-empty input
-        /// values. Returns "All Incidents" if all input values are null or whitespace.</returns>
+        /// <param name="line">The line value.</param>
+        /// <param name="shift">The shift value.</param>
+        /// <param name="equipment">The equipment value.</param>
+        /// <param name="sop">The SOP value.</param>
+        /// <param name="groupingType">The selected grouping type.</param>
+        /// <returns>The formatted group label.</returns>
         private string BuildGroupValue(string line, string shift, string equipment, string sop, string groupingType)
         {
             List<string> parts = new();
@@ -301,12 +275,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Returns the primary field used for sorting report rows based on the selected grouping type.
+        /// Gets the row value used for primary sorting based on the selected grouping type.
         /// </summary>
-        /// <param name="row">The report row from which to extract the grouping value.</param>
-        /// <param name="groupingType">The type of grouping to use when selecting the sort value. Supported values include "Shift", "Equipment",
-        /// "SOP", and "Line". If an unrecognized value is provided, the default group value is used.</param>
-        /// <returns>A string representing the primary sort value for the specified grouping type.</returns>
+        /// <param name="row">The report row to inspect.</param>
+        /// <param name="groupingType">The grouping type used to choose the sort field.</param>
+        /// <returns>The row value used for sorting.</returns>
         private string GetPrimaryGroupSortValue(ReportRow row, string groupingType)
         {
             return groupingType switch

@@ -7,9 +7,7 @@
  * Layer: Model
  * 
  * Purpose:
- * This class represents a collection of reference data used throughout the application.
- * It groups related domain entities such as lines, shifts, equipment, and SOPs into a single
- * structure for convenient retrieval and use in the user interface and application logic.
+ * This class groups reference data collections used by the UI and application logic.
  */
 
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
@@ -17,8 +15,7 @@ using Incident_Driven_Training_Gap_Analysis_System.Domain;
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents a container for reference data entities used to populate UI controls
-    /// and support report generation and validation logic.
+    /// Represents reference data used for UI selections, validation, and report generation.
     /// </summary>
     public class ReferenceDataSet
     {
@@ -38,7 +35,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         public List<Equipment> Equipment { get; set; } = new List<Equipment>();
 
         /// <summary>
-        /// Gets or sets the collection of standard operating procedures (SOPs).
+        /// Gets or sets the collection of SOPs.
         /// </summary>
         public List<SOP> Sops { get; set; } = new List<SOP>();
     }

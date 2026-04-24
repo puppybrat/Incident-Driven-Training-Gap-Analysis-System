@@ -15,7 +15,7 @@
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents a single row of report output, including grouped values, reference data, and incident count.
+    /// Represents a single row of report output, including grouped values, incident count, and flag status.
     /// </summary>
     public class ReportRow
     {

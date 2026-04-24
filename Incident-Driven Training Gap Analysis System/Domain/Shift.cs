@@ -7,8 +7,7 @@
  * Layer: Domain
  * 
  * Purpose:
- * This class represents a work shift within the system.
- * It defines the properties associated with a shift, including its identifier and name.
+ * This class represents a work shift used to categorize incidents by time period.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Domain

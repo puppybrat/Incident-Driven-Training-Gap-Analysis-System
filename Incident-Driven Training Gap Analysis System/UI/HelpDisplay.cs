@@ -1,32 +1,46 @@
-﻿using System;
+﻿/*
+ * File: HelpDisplay.cs
+ * Author: Sarah Portillo
+ * Date: 04/24/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ *
+ * Layer: User Interface Layer
+ *
+ * Purpose:
+ * This form displays README-based help documentation by section.
+ * Built-in fallback text is shown when README.md is unavailable.
+ */
+
 using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
     /// <summary>
-    /// Help dialog that displays README-based documentation.
-    /// Falls back to built-in placeholder content if README is not found.
+    /// Displays README-based help documentation with built-in fallback content.
     /// </summary>
     public partial class HelpDisplay : Form
     {
-        private ListBox _sectionList;
-        private TextBox _contentBox;
-        private Label _titleLabel;
-        private Label _subtitleLabel;
-        private Button _closeButton;
-        private Button _openDocsButton;
+        private ListBox _sectionList = null!;
+        private TextBox _contentBox = null!;
+        private Label _titleLabel = null!;
+        private Label _subtitleLabel = null!;
+        private Button _closeButton = null!;
+        private Button _openDocsButton = null!;
 
         private readonly string _readmePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "README.md");
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HelpDisplay"/> class.
+        /// </summary>
         public HelpDisplay()
         {
             InitializeComponents();
             LoadSections();
         }
 
+        /// <summary>
+        /// Builds the help display controls and wires their events.
+        /// </summary>
         private void InitializeComponents()
         {
             this.Text = "Help";
@@ -69,7 +83,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
             _openDocsButton = new Button
             {
-                Text = "Open Online Documentation",
+                Text = "Open Project Repository",
                 Location = new Point(10, 520),
                 Size = new Size(220, 30)
             };
@@ -91,31 +105,51 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             this.Controls.Add(_closeButton);
         }
 
+        /// <summary>
+        /// Loads the available help section names into the section list.
+        /// </summary>
         private void LoadSections()
         {
             _sectionList.Items.Clear();
 
-            _sectionList.Items.AddRange(new object[]
-            {
+            _sectionList.Items.AddRange(
+            [
                 "Overview",
+                "Purpose",
+                "System Type",
                 "Application Navigation",
-                "Create Incident",
-                "Configure Rules",
-                "Generate Report",
-                "Import and Export",
+                "First-Time Use",
+                "Creating an Incident",
+                "Configuring Rules",
+                "Generating Reports",
+                "Importing CSV Data",
+                "Exporting Data",
+                "Data Storage",
                 "Constraints and Notes",
-                "Online Documentation"
-            });
+                "Recommended Workflow",
+                "CSV Example",
+                "Troubleshooting"
+            ]);
 
             _sectionList.SelectedIndex = 0;
         }
 
-        private void OnSectionChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Updates the displayed help text when the selected section changes.
+        /// </summary>
+        /// <param name="sender">The control that raised the event.</param>
+        /// <param name="e">The event data.</param>
+        private void OnSectionChanged(object? sender, EventArgs e)
         {
             string section = _sectionList.SelectedItem?.ToString() ?? "";
             _contentBox.Text = GetSectionContent(section);
         }
 
+        /// <summary>
+        /// Gets README content for the selected section or fallback text when needed.
+        /// </summary>
+        /// <param name="section">The help section name.</param>
+        /// <returns>The help text for the selected section.</returns>
         private string GetSectionContent(string section)
         {
             if (File.Exists(_readmePath))
@@ -126,6 +160,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             return GetFallbackContent(section);
         }
 
+        /// <summary>
+        /// Extracts a named section from README.md.
+        /// </summary>
+        /// <param name="section">The README section heading to find.</param>
+        /// <returns>The extracted section text, or an empty string if it is not found.</returns>
         private string ExtractSectionFromReadme(string section)
         {
             try
@@ -136,7 +175,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith("## ") && line.Contains(section))
+                    if (line.StartsWith("## ") && line.Substring(3).Trim().Equals(section, StringComparison.OrdinalIgnoreCase))
                     {
                         capture = true;
                         continue;
@@ -146,7 +185,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                         break;
 
                     if (capture)
-                        result += line + Environment.NewLine;
+                        result += FormatReadmeLine(line) + Environment.NewLine;
                 }
 
                 return string.IsNullOrWhiteSpace(result)
@@ -159,49 +198,63 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             }
         }
 
-        private string GetFallbackContent(string section)
+        /// <summary>
+        /// Converts selected README markdown syntax into readable plain text for display.
+        /// </summary>
+        /// <param name="line">The README line to format.</param>
+        /// <returns>A plain-text version of the README line.</returns>
+        private static string FormatReadmeLine(string line)
         {
-            switch (section)
+            if (line.StartsWith("### "))
             {
-                case "Overview":
-                    return "This system analyzes incident data to identify training gaps and generate actionable reports.";
-
-                case "Application Navigation":
-                    return "Use the main menu to access incident creation, rule configuration, and report generation features.";
-
-                case "Create Incident":
-                    return "Enter incident details including category, description, and associated attributes.";
-
-                case "Configure Rules":
-                    return "Define rules that map incident patterns to training needs.";
-
-                case "Generate Report":
-                    return "Generate reports summarizing training gaps identified from incident analysis.";
-
-                case "Import and Export":
-                    return "Import incident data or export reports using supported formats.";
-
-                case "Constraints and Notes":
-                    return "Ensure data consistency and follow required input formats when entering information.";
-
-                case "Online Documentation":
-                    return "Click the button below to open full documentation when available.";
-
-                default:
-                    return "";
+                string heading = line.Substring(4).Trim().ToUpperInvariant();
+                return $"{heading}{Environment.NewLine}{new string('-', heading.Length)}";
             }
+
+            if (line.StartsWith("- "))
+            {
+                return "• " + line.Substring(2);
+            }
+
+            return line;
         }
 
-        private void OpenDocsClicked(object sender, EventArgs e)
+        /// <summary>
+        /// Gets built-in help text for a section when README content is unavailable.
+        /// </summary>
+        /// <param name="section">The help section name.</param>
+        /// <returns>Fallback help text for the selected section.</returns>
+        private static string GetFallbackContent(string section)
+        {
+            return section switch
+            {
+                "Overview" => "This system stores incident records and generates rule-based reports to identify repeated incident patterns for review.",
+                "Purpose" => "The system supports incident creation, CSV import, rule configuration, report generation, Missing SOP review, and CSV export.",
+                "System Type" => "This is a local, offline, single-user Windows desktop application that stores data in SQLite.",
+                "Application Navigation" => "Use the main menu to access incident creation, rule configuration, report generation, import, export, and help features.",
+                "First-Time Use" => "On first use, the system initializes the local database and required reference data.",
+                "Creating an Incident" => "Create incident records by selecting occurrence date and time, shift, line, equipment, and an optional SOP reference.",
+                "Configuring Rules" => "Configure threshold, grouping type, time window, and flagging settings used during report evaluation.",
+                "Generating Reports" => "Generate table or graph reports using presets, filters, grouping options, included fields, and optional date ranges.",
+                "Importing CSV Data" => "Import incident records from CSV files using the required header: OccurredAt,EquipmentId,ShiftId,SopId.",
+                "Exporting Data" => "Export incident datasets or generated report results to CSV.",
+                "Data Storage" => "The system stores incident records, reference data, and rule configuration values locally using SQLite.",
+                "Constraints and Notes" => "The system supports local, single-user incident tracking and rule-based reporting. Reports are decision-support outputs, not automatic corrective actions.",
+                "Recommended Workflow" => "Create or import incidents, configure rules, generate a report, review results, and export if needed.",
+                "CSV Example" => "The README provides an example CSV format for importing incident data.",
+                "Troubleshooting" => "The README includes common troubleshooting notes for CSV import, report generation, Missing SOP reports, and export issues.",
+                _ => ""
+            };
+        }
+
+        /// <summary>
+        /// Opens the project repository link in the default browser.
+        /// </summary>
+        /// <param name="sender">The control that raised the event.</param>
+        /// <param name="e">The event data.</param>
+        private void OpenDocsClicked(object? sender, EventArgs e)
         {
             string url = "https://github.com/puppybrat/Incident-Driven-Training-Gap-Analysis-System";
-
-            if (url.Contains("your-documentation-url"))
-            {
-                MessageBox.Show("Documentation URL not configured.", "Info",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
 
             try
             {

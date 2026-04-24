@@ -7,12 +7,9 @@
  * Layer: Data Persistence Layer
  * 
  * Purpose:
- * This class is responsible for managing the persistence of rule configuration settings in the database.
- * It provides methods to save, load, and reset rule configurations, ensuring that user-defined settings
- * are stored and retrieved correctly across application sessions. The repository interacts with the
- * DatabaseManager to perform database operations and handles any exceptions that may arise during these
- * interactions, providing a robust mechanism for maintaining the integrity of the rule configuration data.
-*/
+ * This class manages persistence for rule configuration settings.
+ * It saves, loads, and resets the rule configuration stored in SQLite.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Microsoft.Data.Sqlite;
@@ -20,15 +17,14 @@ using Microsoft.Data.Sqlite;
 namespace Incident_Driven_Training_Gap_Analysis_System.Data
 {
     /// <summary>
-    /// Provides methods for persisting, retrieving, and resetting rule configuration settings in the application's
-    /// database.
+    /// Provides database access methods for rule configuration settings.
     /// </summary>
     public class RuleConfigRepository
     {
         private readonly DatabaseManager _databaseManager;
 
         /// <summary>
-        /// Default constructor that initializes the RuleConfigRepository with a new instance of DatabaseManager.
+        /// Initializes a new instance of the <see cref="RuleConfigRepository"/> class.
         /// </summary>
         public RuleConfigRepository()
         {
@@ -36,19 +32,19 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes a new instance of the <see cref="RuleConfigRepository"/> class with a database manager.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager to use.</param>
         public RuleConfigRepository(DatabaseManager databaseManager)
         {
             _databaseManager = databaseManager;
         }
 
         /// <summary>
-        /// Persists the provided rule configuration settings to the database. If a configuration already exists, it updates the existing record; otherwise, it inserts a new record.
+        /// Saves the rule configuration to the database.
         /// </summary>
-        /// <param name="ruleConfig">The rule configuration to save. Cannot be null.</param>
-        /// <returns>true if the configuration was saved successfully; otherwise, false.</returns>
+        /// <param name="ruleConfig">The rule configuration to save.</param>
+        /// <returns>true if the configuration was saved; otherwise, false.</returns>
         public bool SaveRuleConfig(RuleConfig ruleConfig)
         {
             try
@@ -82,10 +78,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Loads the saved rule configuration for the application.
-        /// If no saved configuration exists or loading fails, returns a default configuration.
+        /// Loads the saved rule configuration, returning default settings when none are available or loading fails.
         /// </summary>
-        /// <returns>A new instance of the <see cref="RuleConfig"/> class containing the configuration settings.</returns>
+        /// <returns>The saved or default rule configuration.</returns>
         public RuleConfig LoadRuleConfig()
         {
             try
@@ -111,7 +106,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                     GroupingType = reader.GetString(1),
                     TimeWindow = reader.GetString(2),
                     FlagEnabled = reader.GetInt32(3) == 1,
-                    SelectedPresetBehavior = string.Empty // Preset behavior is not saved in the database, so we return an empty string.
+                    SelectedPresetBehavior = string.Empty
                 };
             }
             catch
@@ -121,9 +116,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Overwrites any saved configuration with default values.
+        /// Replaces the saved rule configuration with default values.
         /// </summary>
-        /// <returns>A new instance of the RuleConfig class initialized with default settings.</returns>
+        /// <returns>The default rule configuration.</returns>
         public RuleConfig ResetRuleConfigToDefaults()
         {
             RuleConfig defaultConfig = GetDefaultRuleConfig();
@@ -132,9 +127,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Creates a new instance of the default rule configuration with predefined settings.
+        /// Creates the default rule configuration used when no saved settings are available.
         /// </summary>
-        /// <returns>A <see cref="RuleConfig"/> object initialized with default values for threshold, grouping type, time window, flag status, and preset behavior.</returns>
+        /// <returns>The default rule configuration.</returns>
         private static RuleConfig GetDefaultRuleConfig()
         {
             return RuleConfig.CreateDefault();

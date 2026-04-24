@@ -7,13 +7,9 @@
  * Layer: Data Persistence Layer
  * 
  * Purpose:
- * This class is responsible for managing the persistence of incident records in the database.
- * It provides methods to insert, retrieve, and count incident records, ensuring that
- * incident data is stored and retrieved correctly across application sessions. The repository
- * interacts with the DatabaseManager to perform database operations and handles any exceptions
- * that may arise during these interactions, providing a robust mechanism for maintaining
- * the integrity of the incident data.
-*/
+ * This class manages persistence for incident records. It inserts,
+ * retrieves and maps incident data using the database manager.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
@@ -22,15 +18,14 @@ using Microsoft.Data.Sqlite;
 namespace Incident_Driven_Training_Gap_Analysis_System.Data
 {
     /// <summary>
-    /// Provides methods for inserting, retrieving, and counting incident records in the database.
-    /// Supports single and batch inserts, retrieval by identifier, and filtered queries for incident data access.
+    /// Provides database access methods for incident records.
     /// </summary>
     public class IncidentRepository
     {
         private readonly DatabaseManager _databaseManager;
 
         /// <summary>
-        /// Default constructor that initializes the IncidentRepository with a new instance of DatabaseManager.
+        /// Initializes a new instance of the <see cref="IncidentRepository"/> class.
         /// </summary>
         public IncidentRepository()
         {
@@ -38,9 +33,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes a new instance of the <see cref="IncidentRepository"/> class with a database manager.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager to use.</param>
         public IncidentRepository(DatabaseManager databaseManager)
         {
             _databaseManager = databaseManager;
@@ -49,8 +44,8 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         /// <summary>
         /// Inserts a single incident record.
         /// </summary>
-        /// <param name="incident">The incident to insert. Cannot be null.</param>
-        /// <returns>true if exactly one record was inserted; otherwise, false.</returns>
+        /// <param name="incident">The incident to insert.</param>
+        /// <returns>true if one incident record is inserted; otherwise, false.</returns>
         public bool InsertIncident(Incident incident)
         {
             ArgumentNullException.ThrowIfNull(incident);
@@ -76,10 +71,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Inserts a collection of incident records within a single transaction.
+        /// Inserts multiple incident records within one transaction.
         /// </summary>
         /// <param name="incidentCollection">The incident records to insert.</param>
-        /// <returns>true if all records were inserted successfully; otherwise, false.</returns>
+        /// <returns>true if all incident records are inserted; otherwise, false.</returns>
         public bool InsertIncidents(List<Incident> incidentCollection)
         {
             ArgumentNullException.ThrowIfNull(incidentCollection);
@@ -107,44 +102,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Retrieves an incident by its identifier.
-        /// </summary>
-        /// <param name="incidentId">The incident identifier.</param>
-        /// <returns>The matching incident, or null if no match is found.</returns>
-        public Incident? GetIncidentById(int incidentId)
-        {
-            try
-            {
-                using SqliteConnection connection = _databaseManager.OpenConnection();
-
-                const string sql = @"
-                    SELECT incidentId, occurredAt, equipmentId, shiftId, sopId
-                    FROM Incident
-                    WHERE incidentId = @incidentId;";
-
-                using SqliteCommand command = new(sql, connection);
-                command.Parameters.AddWithValue("@incidentId", incidentId);
-
-                using SqliteDataReader reader = command.ExecuteReader();
-
-                if (!reader.Read())
-                {
-                    return null;
-                }
-
-                return MapIncident(reader);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Retrieves incidents that match the specified filters.
         /// </summary>
         /// <param name="filterSet">The filters to apply.</param>
-        /// <returns>A list of matching incidents. Returns an empty list when no matches are found.</returns>
+        /// <returns>A list of matching incidents, or an empty list if no records are found.</returns>
         public List<Incident> GetIncidents(FilterSet filterSet)
         {
             ArgumentNullException.ThrowIfNull(filterSet);
@@ -187,42 +148,6 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Counts incidents that match the specified filters.
-        /// </summary>
-        /// <param name="filterSet">The filters to apply.</param>
-        /// <returns>The number of matching incidents.</returns>
-        public int CountIncidents(FilterSet filterSet)
-        {
-            ArgumentNullException.ThrowIfNull(filterSet);
-
-            try
-            {
-                using SqliteConnection connection = _databaseManager.OpenConnection();
-
-                const string sql = @"
-                    SELECT COUNT(*)
-                    FROM Incident i
-                    INNER JOIN Equipment e ON i.equipmentId = e.equipmentId
-                    WHERE (@lineId IS NULL OR e.lineId = @lineId)
-                      AND (@shiftId IS NULL OR i.shiftId = @shiftId)
-                      AND (@equipmentId IS NULL OR i.equipmentId = @equipmentId)
-                      AND ((@requireMissingSop = 1 AND i.sopId IS NULL) OR (@requireMissingSop = 0 AND (@sopId IS NULL OR i.sopId = @sopId)))
-                      AND (@startDate IS NULL OR i.occurredAt >= @startDate)
-                      AND (@endDate IS NULL OR i.occurredAt < @endDate);";
-
-                using SqliteCommand command = new(sql, connection);
-                AddFilterParameters(command, filterSet);
-
-                object? result = command.ExecuteScalar();
-                return Convert.ToInt32(result);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
-        /// <summary>
         /// Adds SQL parameters for an incident insert command.
         /// </summary>
         /// <param name="command">The command to populate.</param>
@@ -236,7 +161,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Adds SQL parameters for incident filtering.
+        /// Adds SQL parameters used by incident filter queries, including the missing SOP filter flag.
         /// </summary>
         /// <param name="command">The command to populate.</param>
         /// <param name="filterSet">The filter values to apply.</param>

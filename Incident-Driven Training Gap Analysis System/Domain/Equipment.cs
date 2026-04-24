@@ -7,16 +7,13 @@
  * Layer: Domain
  * 
  * Purpose:
- * This class represents a piece of equipment within the system.
- * It defines the properties associated with equipment, including its identifier,
- * name, and the production line to which it belongs.
+ * This class represents a piece of equipment and its assigned production line.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Domain
 {
     /// <summary>
-    /// Represents equipment used in the production environment, including its identity
-    /// and associated production line.
+    /// Represents equipment assigned to a production line.
     /// </summary>
     public class Equipment
     {
@@ -31,7 +28,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the identifier of the production line to which this equipment belongs.
+        /// Gets or sets the identifier of the production line this equipment belongs to.
         /// </summary>
         public int LineId { get; set; }
     }

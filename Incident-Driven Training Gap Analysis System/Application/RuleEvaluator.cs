@@ -7,10 +7,8 @@
  * Layer: Application Layer
  * 
  * Purpose:
- * This class is responsible for applying rule-related business logic within the system.
- * It validates rule configuration settings, loads the current configuration for application use,
- * resets configuration values to defaults when needed, and coordinates persistence of rule settings
- * through the data persistence layer.
+ * This class manages rule evaluation and rule configuration operations.
+ * It validates, loads, saves, resets, and applies rule settings.
  */
 
 using Incident_Driven_Training_Gap_Analysis_System.Data;
@@ -20,15 +18,14 @@ using Incident_Driven_Training_Gap_Analysis_System.Models;
 namespace Incident_Driven_Training_Gap_Analysis_System.Application
 {
     /// <summary>
-    /// Applies rule-related business logic, including validation, configuration loading,
-    /// default restoration, and rule-setting persistence coordination.
+    /// Provides rule evaluation and rule configuration operations.
     /// </summary>
     public class RuleEvaluator
     {
         private readonly RuleConfigRepository _ruleConfigRepository;
 
         /// <summary>
-        /// Default constructor that initializes the RuleEvaluator with a new instance of RuleConfigRepository.
+        /// Initializes a new instance of the <see cref="RuleEvaluator"/> class.
         /// </summary>
         public RuleEvaluator()
         {
@@ -36,21 +33,20 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes a new instance of the <see cref="RuleEvaluator"/> class with a database manager.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager to use.</param>
         public RuleEvaluator(DatabaseManager databaseManager)
         {
             _ruleConfigRepository = new RuleConfigRepository(databaseManager);
         }
 
         /// <summary>
-        /// Evaluates the specified report rows against the provided rule configuration and updates their flagged status
-        /// based on the configured threshold rules.
+        /// Evaluates report rows against the active threshold rule and updates their flagged status.
         /// </summary>
-        /// <param name="reportData">A list of report rows to evaluate. If null, an empty list is returned.</param>
-        /// <param name="ruleConfig">The rule configuration that defines the threshold and flagging behavior. If null, default rule settings are applied.</param>
-        /// <returns>The evaluated report rows with their flagged status updated according to the effective rule configuration.</returns>
+        /// <param name="reportData">The report rows to evaluate, or null to return an empty list.</param>
+        /// <param name="ruleConfig">The rule configuration to apply, or null to use default settings.</param>
+        /// <returns>The evaluated report rows with updated flagged status.</returns>
         public List<ReportRow> EvaluateThresholds(List<ReportRow>? reportData, RuleConfig? ruleConfig)
         {
             if (reportData == null)
@@ -71,24 +67,18 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
 
         /// <summary>
         /// Loads the current rule configuration.
-        /// Retrieves the active rule configuration from the data store or configuration source, ensuring that the latest settings are applied during evaluation.
         /// </summary>
-        /// <returns>A <see cref="RuleConfig"/> instance representing the current rule configuration.</returns>
+        /// <returns>The current rule configuration.</returns>
         public RuleConfig LoadCurrentRuleConfig()
         {
             return RuleConfig.Normalize(_ruleConfigRepository.LoadRuleConfig());
         }
 
         /// <summary>
-        /// Validates the specified rule configuration and returns the result of the validation.
+        /// Validates threshold, grouping type, and time window values for a rule configuration.
         /// </summary>
-        /// <param name="ruleConfig">
-        /// The rule configuration to validate. If null, validation fails.
-        /// The threshold value must be zero or greater, and the grouping type and time window
-        /// must be valid predefined options.
-        /// </param>
-        /// <returns>A ValidationResult indicating whether the configuration is valid. If invalid, the result contains error
-        /// messages describing the validation failures.</returns>
+        /// <param name="ruleConfig">The rule configuration to validate.</param>
+        /// <returns>A validation result containing any rule configuration errors.</returns>
         public ValidationResult ValidateRuleConfig(RuleConfig ruleConfig)
         {
             ValidationResult validationResult = new()
@@ -125,10 +115,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Validates and saves the specified rule configuration.
+        /// Validates and saves a rule configuration.
         /// </summary>
-        /// <param name="ruleConfig">The rule configuration to validate and save.</param>
-        /// <returns>A ValidationResult indicating whether the save operation succeeded.</returns>
+        /// <param name="ruleConfig">The rule configuration to save.</param>
+        /// <returns>A validation result containing success status and error messages.</returns>
         public ValidationResult SaveRuleConfig(RuleConfig ruleConfig)
         {
             ValidationResult validationResult = ValidateRuleConfig(ruleConfig);

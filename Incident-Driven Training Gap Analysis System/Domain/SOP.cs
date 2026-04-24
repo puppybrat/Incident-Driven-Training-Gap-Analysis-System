@@ -7,15 +7,13 @@
  * Layer: Domain
  * 
  * Purpose:
- * This class represents a Standard Operating Procedure (SOP) within the system.
- * It defines the properties associated with an SOP, including its identifier, name,
- * and the equipment to which it applies.
+ * This class represents a standard operating procedure (SOP) and its associated equipment.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Domain
 {
     /// <summary>
-    /// Represents a Standard Operating Procedure associated with specific equipment.
+    /// Represents a standard operating procedure associated with equipment.
     /// </summary>
     public class SOP
     {
@@ -30,7 +28,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the identifier of the equipment associated with this SOP.
+        /// Gets or sets the equipment identifier this SOP applies to.
         /// </summary>
         public int EquipmentId { get; set; }
     }

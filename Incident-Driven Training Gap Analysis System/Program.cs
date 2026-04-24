@@ -7,11 +7,10 @@
  * Layer: Application Startup
  * 
  * Purpose:
- * This file serves as the application's entry point. It initializes the WinForms
- * environment, ensures the database and reference data are ready for use, launches
- * the main application window, and optionally supports command-line seeding for
- * generating sample incident records.
-*/
+ * This file serves as the application entry point. It initializes WinForms,
+ * prepares database/reference data, launches the main form, and supports
+ * optional command-line sample data seeding.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
@@ -23,18 +22,14 @@ using WinFormsApplication = System.Windows.Forms.Application;
 namespace Incident_Driven_Training_Gap_Analysis_System
 {
     /// <summary>
-    /// Provides the application entry point and startup orchestration for the
-    /// Incident-Driven Training Gap Analysis System.
+    /// Provides the application entry point and startup workflow.
     /// </summary>
     internal static class Program
     {
         /// <summary>
-        /// Initializes the application, optionally runs the sample data seeder when requested
-        /// through command-line arguments, and otherwise launches the main application window.
+        /// Starts the application or runs sample data seeding when requested.
         /// </summary>
-        /// <param name="args">The command-line arguments passed to the application.
-        /// When the first argument is seed, the application generates sample incident
-        /// records and exits.</param>
+        /// <param name="args">Command-line arguments. Use "seed" as the first argument to generate sample incidents.</param>
         [STAThread]
         private static void Main(string[] args)
         {
@@ -49,12 +44,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System
         }
 
         /// <summary>
-        /// Determines whether the application should run in sample-data seeding mode,
-        /// and if so, executes the seeder and prevents the main UI from launching.
+        /// Runs sample data seeding when requested by command-line arguments.
         /// </summary>
         /// <param name="args">The command-line arguments supplied to the application.</param>
-        /// <returns><see langword="true"/> if seeding mode was requested and executed; otherwise,
-        /// <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if seeding was run; otherwise, <see langword="false"/>.</returns>
         private static bool TryRunSeeder(string[] args)
         {
             if (args.Length == 0 || !args[0].Equals("seed", StringComparison.OrdinalIgnoreCase))
@@ -68,12 +61,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System
         }
 
         /// <summary>
-        /// Determines the number of sample incidents to generate from the supplied
-        /// command-line arguments.
+        /// Gets the requested sample incident count from command-line arguments.
         /// </summary>
         /// <param name="args">The command-line arguments supplied to the application.</param>
-        /// <returns>The requested number of records to seed, or the default value of 100 when
-        /// no valid count is provided.</returns>
+        /// <returns>The requested count, or 100 when no valid count is provided.</returns>
         private static int GetSeedCount(string[] args)
         {
             const int DefaultSeedCount = 100;
@@ -95,8 +86,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
         }
 
         /// <summary>
-        /// Ensures that the application's database and required reference data
-        /// are initialized before the main window is displayed.
+        /// Initializes the application database and required reference data before startup.
         /// </summary>
         private static void EnsureApplicationData()
         {
@@ -116,9 +106,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System
         }
 
         /// <summary>
-        /// Seeds the database with a specified number of randomly generated incident records.
+        /// Seeds the database with randomly generated incident records.
         /// </summary>
-        /// <param name="count">The number of sample incident records to generate.</param>
+        /// <param name="count">The number of sample incidents to generate.</param>
         private static void RunSeeder(int count)
         {
             DatabaseManager databaseManager = new("training_gap_analysis.db");
@@ -147,13 +137,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System
         }
 
         /// <summary>
-        /// Builds a randomly generated incident using the available reference data.
-        /// A shift and equipment item are always selected, and an SOP is assigned
-        /// when one exists for the selected equipment and passes the configured probability check.
+        /// Builds a random incident using available shifts, equipment, and optional matching SOP data.
         /// </summary>
-        /// <param name="data">The reference data used to populate the generated incident.</param>
+        /// <param name="data">The reference data used to build the incident.</param>
         /// <param name="random">The random number generator used for value selection.</param>
-        /// <returns>A randomly generated <see cref="Incident"/> instance.</returns>
+        /// <returns>A randomly generated incident.</returns>
         private static Incident BuildRandomIncident(ReferenceDataSet data, Random random)
         {
             Shift shift = data.Shifts[random.Next(data.Shifts.Count)];

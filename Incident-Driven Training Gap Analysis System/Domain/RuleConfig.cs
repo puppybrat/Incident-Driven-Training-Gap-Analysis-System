@@ -7,21 +7,19 @@
  * Layer: Domain
  * 
  * Purpose:
- * This class represents rule configuration settings used by the Incident-Driven Training Gap Analysis System.
- * It defines the rule properties, valid option sets, default values, and normalization and validation helpers
- * used across the application.
-*/
+ * This class represents rule configuration settings, valid rule options,
+ * default values, and normalization helpers used during report evaluation.
+ */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Domain
 {
     /// <summary>
-    /// Represents the configuration settings for a rule, including threshold values, grouping options, time window, and
-    /// optional behavior presets.
+    /// Represents configurable rule settings used during report evaluation.
     /// </summary>
     public class RuleConfig
     {
         /// <summary>
-        /// Gets the available grouping type options for rule configurations.
+        /// Gets the valid grouping type options for rule configuration.
         /// </summary>
         public static readonly string[] GroupingOptions =
         {
@@ -32,7 +30,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         };
 
         /// <summary>
-        /// Gets the available time window options for rule configurations.
+        /// Gets the valid time window options for rule configuration.
         /// </summary>
         public static readonly string[] TimeWindowOptions =
         {
@@ -43,35 +41,35 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         };
 
         /// <summary>
-        /// Gets or sets the threshold value used to determine when a result should be flagged.
+        /// Gets or sets the threshold value used to flag report results.
         /// </summary>
         public decimal ThresholdValue { get; set; }
 
         /// <summary>
-        /// Gets or sets the grouping type used for aggregating incident data (ie. by shift, by equipment, etc.).
+        /// Gets or sets the grouping type used to aggregate incident data.
         /// </summary>
         public string GroupingType { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the time window over which incident data is evaluated (ie. last 7 days, last 30 days, etc.).
+        /// Gets or sets the time window used during rule evaluation.
         /// </summary>
         public string TimeWindow { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets a value indicating whether result flagging is enabled.
+        /// Gets or sets whether report result flagging is enabled.
         /// </summary>
         public bool FlagEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the currently selected preset behavior.
-        /// This property is not persisted in the database and is only used at runtime.
+        /// Gets or sets the selected preset behavior used at runtime.
+        /// This property is not persisted in the database.
         /// </summary>
         public string SelectedPresetBehavior { get; set; } = string.Empty;
 
         /// <summary>
-        /// Creates a new instance of the RuleConfig class initialized with default values.
+        /// Creates the default rule configuration used when no saved settings are available.
         /// </summary>
-        /// <returns>A RuleConfig object with default property values set.</returns>
+        /// <returns>The default rule configuration.</returns>
         public static RuleConfig CreateDefault()
         {
             return new RuleConfig
@@ -85,13 +83,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         }
 
         /// <summary>
-        /// Normalizes the specified rule configuration by ensuring all required fields have valid values.
-        /// Invalid or missing values are replaced with defaults.
-        /// If a non-null instance is provided, that instance may be updated and returned.
-        /// If null is provided, a new default configuration is created and returned.
+        /// Applies default values to a rule configuration.
         /// </summary>
-        /// <param name="ruleConfig">The rule configuration to normalize. If null, a default configuration is created.</param>
-        /// <returns>A normalized <see cref="RuleConfig"/> instance with all fields set to valid values.</returns>
+        /// <param name="ruleConfig">The rule configuration to normalize.</param>
+        /// <returns>A normalized rule configuration.</returns>
         public static RuleConfig Normalize(RuleConfig? ruleConfig)
         {
             RuleConfig normalized = ruleConfig ?? CreateDefault();
@@ -117,10 +112,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         }
 
         /// <summary>
-        /// Determines whether the specified grouping type is valid.
+        /// Determines whether a grouping type matches one of the configured grouping options.
         /// </summary>
-        /// <param name="groupingType">The grouping type to validate. Can be null or whitespace.</param>
-        /// <returns>true if the specified grouping type is recognized and not null or whitespace; otherwise, false.</returns>
+        /// <param name="groupingType">The grouping type to validate.</param>
+        /// <returns>true if the grouping type is valid; otherwise, false.</returns>
         public static bool IsValidGroupingType(string? groupingType)
         {
             return !string.IsNullOrWhiteSpace(groupingType)
@@ -128,11 +123,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         }
 
         /// <summary>
-        /// Determines whether the specified time window string is valid.
+        /// Determines whether a time window matches one of the configured time window options.
         /// </summary>
-        /// <param name="timeWindow">The time window string to validate. May be null or empty.</param>
-        /// <returns>true if the time window is not null, not whitespace, and is contained in the set of valid time window
-        /// options; otherwise, false.</returns>
+        /// <param name="timeWindow">The time window to validate.</param>
+        /// <returns>true if the time window is valid; otherwise, false.</returns>
         public static bool IsValidTimeWindow(string? timeWindow)
         {
             return !string.IsNullOrWhiteSpace(timeWindow)

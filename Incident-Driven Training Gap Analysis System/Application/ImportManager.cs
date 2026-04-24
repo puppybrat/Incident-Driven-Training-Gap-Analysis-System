@@ -7,13 +7,9 @@
  * Layer: Application Layer
  * 
  * Purpose:
- * This class is responsible for managing the import of incident data from CSV files within the
- * Incident-Driven Training Gap Analysis System. It validates the format of the selected file, parses its contents, and
- * processes each row to ensure it meets the required criteria for an incident record. Valid records are
- * then inserted into the data store, while any errors encountered during processing are collected and
- * returned in an import summary. The ImportManager serves as an intermediary between the UI layer and
- * the data layer for handling bulk imports of incident data, ensuring that all necessary validations
- * are applied before any data is persisted.
+ * This class manages CSV import operations for incident data.
+ * It validates the selected file, parses incident rows, inserts valid records,
+ * and returns a summary of inserted and rejected rows.
  */
 
 using System.Globalization;
@@ -38,7 +34,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         private string _lastRowError = string.Empty;
 
         /// <summary>
-        /// Default constructor that initializes the ImportManager with a new instance of IncidentRepository and ReferenceDataRepository.
+        /// Initializes import services using the default incident and reference data repositories.
         /// </summary>
         public ImportManager()
         {
@@ -47,9 +43,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes import services with a database manager, primarily for controlled database access in tests.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager used to create import repositories.</param>
         public ImportManager(DatabaseManager databaseManager)
         {
             _incidentRepository = new IncidentRepository(databaseManager);
@@ -169,10 +165,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Validates whether the specified file is in a supported format.
+        /// Validates whether the specified file is an existing CSV file.
         /// </summary>
-        /// <param name="filePath">The full path to the file to validate.</param>
-        /// <returns>true if the file format is supported; otherwise, false.</returns>
+        /// <param name="filePath">The file path to validate.</param>
+        /// <returns>true if the file is usable; otherwise, false.</returns>
         private bool ValidateFileFormat(string filePath)
         {
             try
@@ -219,13 +215,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Processes a four-column incident CSV row and converts it to an <see cref="Incident"/> when all values are valid.
-        /// The expected column order is OccurredAt, EquipmentId, ShiftId, and SopId.
-        /// Reference data must already be loaded before calling this method so the identifier checks can be performed.
+        /// Validates a four-column incident CSV row and converts it to an incident record.
+        /// Expected columns are OccurredAt, EquipmentId, ShiftId, and SopId.
+        /// Reference data must be loaded first so identifiers can be verified.
         /// </summary>
         /// <param name="rowData">The CSV row values to validate and convert.</param>
-        /// <returns>The created <see cref="Incident"/> when the row is valid; otherwise, <see langword="null"/>.</returns>
-        /// 
+        /// <returns>The created incident when valid; otherwise, <see langword="null"/>.</returns>
         private Incident? ProcessRow(string[] rowData)
         {
             _lastRowError = string.Empty;

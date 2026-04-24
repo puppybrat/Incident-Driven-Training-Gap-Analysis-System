@@ -15,7 +15,7 @@
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents the input parameters used to generate a report.
+    /// Represents the preset, filters, grouping, output type, and display options used to generate a report.
     /// </summary>
     public class ReportRequest
     {

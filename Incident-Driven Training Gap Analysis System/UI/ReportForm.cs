@@ -7,26 +7,21 @@
  * Layer: UI Layer
  * 
  * Purpose:
- * This user control provides the interface for generating incident reports within the system.
- * It loads selectable report presets and filter options, gathers user-selected grouping and filter criteria,
- * constructs a ReportRequest object, submits it to the application layer for report generation,
- * and displays the resulting data in either table or graph form.
-*/
+ * This user control provides the interface for generating reports.
+ * It loads presets and filter options, builds report requests, submits them
+ * for generation, and displays results as a table or graph.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
-using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.WinForms;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
     /// <summary>
-    /// Provides the user interface for configuring and generating incident reports.
-    /// This form allows users to select report presets, apply filters and grouping options,
-    /// construct a report request, and display results in table or graph format.
-    /// It interacts with the application layer to retrieve and process report data.
+    /// Provides the user interface for configuring, generating, and displaying incident reports.
     /// </summary>
     public partial class ReportForm : UserControl
     {
@@ -44,12 +39,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         private const string SopGrouping = "SOP";
 
         private static readonly string[] GroupingOptions =
-        {
+        [
             ShiftGrouping,
             LineGrouping,
             EquipmentGrouping,
             SopGrouping
-        };
+        ];
 
         private ReportResult? _currentReportResult;
 
@@ -85,42 +80,31 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         private Label _lblSummary = null!;
 
         /// <summary>
-        /// Helper class to represent items in the combo box, allowing for easy retrieval of the selected
-        /// item's unique identifier when processing the incident submission. Each ComboBoxItem instance
-        /// holds both the display text and the corresponding value for use in the UI and backend logic.
+        /// Represents a combo box item with a stored identifier and display text.
         /// </summary>
-        private sealed class ComboBoxItem
+        /// <param name="value">The stored identifier.</param>
+        /// <param name="text">The display text.</param>
+        private sealed class ComboBoxItem(int value, string text)
         {
             /// <summary>
-            /// Gets the value represented by this instance.
+            /// Gets the stored integer value for the item.
             /// </summary>
-            public int Value { get; }
+            public int Value { get; } = value;
 
             /// <summary>
-            /// Gets the text content associated with this instance.
+            /// Gets the display text shown in the combo box.
             /// </summary>
-            public string Text { get; }
+            public string Text { get; } = text;
 
             /// <summary>
-            /// Initializes a new instance of the ComboBoxItem class with the specified value and display text.
+            /// Returns the display text for the combo box item.
             /// </summary>
-            /// <param name="value">The integer value associated with the item. Typically used as the item's underlying data or identifier.</param>
-            /// <param name="text">The display text shown for the item in the combo box.</param>
-            public ComboBoxItem(int value, string text)
-            {
-                Value = value;
-                Text = text;
-            }
-
-            /// <summary>
-            /// Returns a string that represents the current object.
-            /// </summary>
-            /// <returns>A string containing the text representation of the object.</returns>
+            /// <returns>The display text.</returns>
             public override string ToString() => Text;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReportForm"/> class, builds the layout, loads report presets and filter options, applies default rule configuration settings, and prepares the form for user interaction.
+        /// Initializes a new instance of the <see cref="ReportForm"/> class.
         /// </summary>
         public ReportForm()
         {
@@ -134,9 +118,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Loads available report presets into the preset selection control.
-        /// Presets provide predefined combinations of grouping and filter settings
-        /// to simplify report configuration.
+        /// Loads predefined report presets into the preset selection control.
         /// </summary>
         public void LoadReportPresets()
         {
@@ -151,9 +133,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Loads available filter options for report generation, including grouping types,
-        /// reference data (lines, shifts, equipment, SOPs), and output modes.
-        /// Populates the corresponding UI controls with selectable values.
+        /// Loads grouping, reference data, Missing SOP, and output options into report controls.
         /// </summary>
         public void LoadFilterOptions()
         {
@@ -182,14 +162,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _cboEquipment.SelectedIndex = 0;
             _cboSop.SelectedIndex = 0;
 
-            PopulateComboBoxWithStrings(_cboOutput, new[] { TableOutput, GraphOutput });
+            PopulateComboBoxWithStrings(_cboOutput, [TableOutput, GraphOutput]);
             _cboOutput.SelectedIndex = 0;
         }
 
         /// <summary>
-        /// Applies the selected report preset to the form controls.
-        /// Resets existing filters and updates grouping, filter selections,
-        /// and output type based on the preset definition.
+        /// Applies the selected report preset by resetting filters and updating preset-controlled options.
         /// </summary>
         public void ApplyPresetToControls()
         {
@@ -219,9 +197,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Validates the current report configuration, builds a report request,
-        /// and invokes the report generation process through the application layer.
-        /// Displays the resulting report data or any validation errors.
+        /// Validates the date range, builds a report request, and displays the generated result.
         /// </summary>
         public void ProcessReportRequest()
         {
@@ -245,8 +221,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Clears the currently displayed report results and resets the output area.
-        /// Hides result controls and resets summary text.
+        /// Clears the current report result and resets the output area.
         /// </summary>
         public void ClearResults()
         {
@@ -258,16 +233,15 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _gridResults.DataSource = null;
             _gridResults.Columns.Clear();
 
-            _chartResults.Series = Array.Empty<ISeries>();
-            _chartResults.XAxes = Array.Empty<Axis>();
-            _chartResults.YAxes = Array.Empty<Axis>();
+            _chartResults.Series = [];
+            _chartResults.XAxes = [];
+            _chartResults.YAxes = [];
 
             _lblSummary.Text = "No report generated.";
         }
 
         /// <summary>
-        /// Displays the generated report results in the selected output format.
-        /// Determines whether to render a table or graph based on the report configuration.
+        /// Displays the current report result as either a table or graph.
         /// </summary>
         private void DisplayResults()
         {
@@ -290,10 +264,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Applies control values corresponding to a specific preset configuration.
-        /// Sets grouping type, included fields, and output format based on the preset name.
+        /// Applies grouping, included-field, filter, and output settings for a preset.
         /// </summary>
-        /// <param name="preset">The name of the preset to apply.</param>
+        /// <param name="preset">The preset name to apply.</param>
         private void ApplyPresetState(string preset)
         {
             switch (preset)
@@ -379,8 +352,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Resets all filter controls to their default state while preserving preset selection.
-        /// Applies the current rule configuration to restore default time window behavior.
+        /// Resets filter and output controls while preserving the current preset selection.
         /// </summary>
         private void ResetFiltersOnly()
         {
@@ -402,10 +374,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Applies rule configuration defaults related to time window or grouping behavior
-        /// to the report form controls.
+        /// Applies the rule configuration grouping type and time window to the report controls.
         /// </summary>
-        /// <param name="ruleConfig">The rule configuration providing default values.</param>
+        /// <param name="ruleConfig">The rule configuration providing default report values.</param>
         private void ApplyRuleWindowDefaults(RuleConfig ruleConfig)
         {
             if (_cboGroupingType.Items.Contains(ruleConfig.GroupingType))
@@ -449,10 +420,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Constructs a <see cref="ReportRequest"/> object based on the current form selections,
-        /// including preset, grouping type, output mode, and selected filters.
+        /// Builds a report request from the current preset, grouping, output, field, and filter selections.
         /// </summary>
-        /// <returns>A populated <see cref="ReportRequest"/> instance.</returns>
+        /// <returns>The populated report request.</returns>
         private ReportRequest BuildReportRequest()
         {
             return new ReportRequest
@@ -469,10 +439,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Builds a <see cref="FilterSet"/> from the current filter control values,
-        /// including selected identifiers, date range, and missing SOP conditions.
+        /// Builds report filters from selected identifiers, date range, and Missing SOP state.
         /// </summary>
-        /// <returns>A populated <see cref="FilterSet"/> instance.</returns>
+        /// <returns>The populated filter set.</returns>
         private FilterSet BuildFilterSet()
         {
             bool requireMissingSop = string.Equals(
@@ -493,8 +462,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays report results in a tabular format using a data grid.
-        /// Dynamically creates columns based on included grouping fields and binds report data.
+        /// Displays report rows in the data grid using the enabled output fields.
         /// </summary>
         /// <param name="reportResult">The report result to display.</param>
         private void DisplayTableResults(ReportResult reportResult)
@@ -533,8 +501,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays report results in a graphical format using a chart control.
-        /// Configures the chart series and binds aggregated report data for visualization.
+        /// Displays report rows as a column chart using group labels and incident counts.
         /// </summary>
         /// <param name="reportResult">The report result to display.</param>
         private void DisplayGraphResults(ReportResult reportResult)
@@ -542,38 +509,40 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             _gridResults.Visible = false;
             _chartResults.Visible = true;
 
-            string[] labels = reportResult.Rows
-                .Select(r => r.GroupValue)
-                .ToArray();
+            string[] labels =
+            [
+                .. reportResult.Rows.Select(r => r.GroupValue)
+            ];
 
-            int[] values = reportResult.Rows
-                .Select(r => r.IncidentCount)
-                .ToArray();
+            int[] values =
+            [
+                .. reportResult.Rows.Select(r => r.IncidentCount)
+            ];
 
-            _chartResults.Series = new ISeries[]
-            {
+            _chartResults.Series =
+            [
                 new ColumnSeries<int>
                 {
                     Values = values,
                     Name = "Incident Count"
                 }
-            };
+            ];
 
-            _chartResults.XAxes = new[]
-            {
+            _chartResults.XAxes =
+            [
                 new Axis
                 {
                     Labels = labels
                 }
-            };
+            ];
 
-            _chartResults.YAxes = new[]
-            {
+            _chartResults.YAxes =
+            [
                 new Axis
                 {
                     Name = "Incident Count"
                 }
-            };
+            ];
         }
 
         /// <summary>
@@ -582,7 +551,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         /// </summary>
         /// <param name="comboBox">The combo box containing selectable items.</param>
         /// <returns>The selected identifier, or null if no specific selection is applied.</returns>
-        private int? GetSelectedId(ComboBox comboBox)
+        private static int? GetSelectedId(ComboBox comboBox)
         {
             return comboBox.SelectedItem is ComboBoxItem item ? item.Value : null;
         }
@@ -638,8 +607,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Builds and arranges the user interface layout for the report form,
-        /// including filter controls, action buttons, and result display areas.
+        /// Builds the report form layout, controls, result area, and event handlers.
         /// </summary>
         private void BuildLayout()
         {

@@ -7,9 +7,8 @@
  * Layer: Application Layer
  * 
  * Purpose:
- * This class is responsible for handling export operations for incident data and report data.
- * It retrieves incident records from the data persistence layer, formats exportable content as CSV,
- * validates export destinations, and writes export files for use outside the application.
+ * This class manages CSV export operations for incident data and generated report data.
+ * It validates export paths, builds CSV content, and writes export files.
  */
 
 using System.Text;
@@ -26,7 +25,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         private readonly IncidentRepository _incidentRepository;
 
         /// <summary>
-        /// Default constructor that initializes the ExportManager with a new instance of IncidentRepository.
+        /// Initializes export services using the default incident repository.
         /// </summary>
         public ExportManager()
         {
@@ -34,9 +33,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes export services with a database manager, primarily for controlled database access in tests.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager used to create export repositories.</param>
         public ExportManager(DatabaseManager databaseManager)
         {
             _incidentRepository = new IncidentRepository(databaseManager);
@@ -75,13 +74,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
 
                 foreach (Domain.Incident incident in incidents)
                 {
-                    List<string> values = new()
-            {
-                EscapeCsv(incident.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")),
-                incident.EquipmentId.ToString(),
-                incident.ShiftId.ToString(),
-                EscapeCsv(incident.SopId?.ToString() ?? string.Empty)
-            };
+                    List<string> values =
+                    [
+                        EscapeCsv(incident.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")),
+                        incident.EquipmentId.ToString(),
+                        incident.ShiftId.ToString(),
+                        EscapeCsv(incident.SopId?.ToString() ?? string.Empty)
+                    ];
 
                     csvBuilder.AppendLine(string.Join(",", values));
                 }
@@ -104,13 +103,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Exports the supplied generated report data to a CSV file.
-        /// The export uses the report rows and the enabled report columns in <paramref name="reportResult"/>.
+        /// Exports a generated report to CSV using the columns enabled in the report result.
         /// </summary>
         /// <param name="filePath">The destination CSV file path.</param>
         /// <param name="reportResult">The report result to export.</param>
-        /// <returns>An <see cref="ExportSummary"/> describing whether the export succeeded and any resulting message.</returns>
-        public ExportSummary ExportReport(string filePath, ReportResult reportResult)
+        /// <returns>An export summary describing success or failure.</returns>
+        public static ExportSummary ExportReport(string filePath, ReportResult reportResult)
         {
             ExportSummary summary = new();
 
@@ -173,7 +171,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// </summary>
         /// <param name="filePath">The destination file path to validate.</param>
         /// <returns>True if the location is valid; otherwise, false.</returns>
-        private bool ValidateExportLocation(string filePath)
+        private static bool ValidateExportLocation(string filePath)
         {
             try
             {
@@ -209,7 +207,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <param name="filePath">The destination path.</param>
         /// <param name="csvData">The CSV data to write.</param>
         /// <returns>True if the write succeeds; otherwise, false.</returns>
-        private bool WriteCsvFile(string filePath, string csvData)
+        private static bool WriteCsvFile(string filePath, string csvData)
         {
             try
             {
@@ -223,13 +221,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Builds the CSV header row for report export based on the enabled columns in the report result.
+        /// Builds the CSV header row from the report columns enabled in the report result.
         /// </summary>
         /// <param name="reportResult">The report metadata that determines which columns are included.</param>
         /// <returns>A list of header values.</returns>
         private static List<string> BuildReportHeaders(ReportResult reportResult)
         {
-            List<string> headers = new();
+            List<string> headers = [];
 
             if (reportResult.IncludeLine)
             {
@@ -258,14 +256,14 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         }
 
         /// <summary>
-        /// Builds a CSV data row for report export based on the enabled columns in the report result.
+        /// Builds a CSV data row from the report columns enabled in the report result.
         /// </summary>
         /// <param name="reportResult">The report metadata that determines which columns are included.</param>
         /// <param name="row">The report row being exported.</param>
         /// <returns>A list of CSV-safe values.</returns>
         private static List<string> BuildReportRowValues(ReportResult reportResult, ReportRow row)
         {
-            List<string> values = new();
+            List<string> values = [];
 
             if (reportResult.IncludeLine)
             {

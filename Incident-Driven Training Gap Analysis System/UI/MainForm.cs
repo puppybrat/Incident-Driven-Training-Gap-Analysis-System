@@ -7,29 +7,23 @@
  * Layer: UI Layer
  * 
  * Purpose:
- * This form provides the primary application shell for the system.
- * It configures the main window, builds the shared navigation structure,
- * routes users to the major application screens, and opens supporting
- * dialogs such as import, export, and help.
-*/
+ * This form provides the main application shell, shared navigation,
+ * screen routing, and access to import, export, and help dialogs.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
     /// <summary>
-    /// Represents the main application window for the Incident-Driven Training Gap Analysis System.
-    /// This form provides the top-level menu, left-side navigation, and central content area used to
-    /// display the primary user controls for incident entry, report generation, and rule configuration.
+    /// Represents the main application window with menu navigation and central screen display.
     /// </summary>
     public partial class MainForm : Form
     {
         private readonly Panel _contentPanel = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MainForm"/> class,
-        /// configures the main application shell, builds the layout,
-        /// and displays the default startup screen.
+        /// Initializes a new instance of the <see cref="MainForm"/> class.
         /// </summary>
         public MainForm()
         {
@@ -40,7 +34,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Applies the main form's top-level visual configuration and window behavior.
+        /// Applies the main form window settings.
         /// </summary>
         public void ConfigureForm()
         {
@@ -125,10 +119,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays the specified user control in the main content region,
-        /// replacing any previously displayed screen.
+        /// Displays a user control in the main content region, replacing the current screen.
         /// </summary>
-        /// <param name="screen">The user control to display.</param>
+        /// <param name="screen">The screen to display.</param>
         private void ShowScreen(UserControl screen)
         {
             _contentPanel.Controls.Clear();
@@ -170,8 +163,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Opens the export dialog as a modal window.
-        /// If the current screen is a report form, the active report result is passed to the dialog.
+        /// Opens the export dialog and passes the active report result when a report is currently displayed.
         /// </summary>
         private void OpenExportDialog()
         {
@@ -204,10 +196,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Builds and returns the application's main menu strip,
-        /// including File, Configuration, and Help menus.
+        /// Builds the main menu used for file, configuration, and help actions.
         /// </summary>
-        /// <returns>A fully configured <see cref="MenuStrip"/> instance.</returns>
+        /// <returns>The configured main menu.</returns>
         private MenuStrip BuildMainMenu()
         {
             MenuStrip mainMenu = new()
@@ -255,10 +246,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Builds and returns the left-side navigation panel used to open
-        /// the application's primary screens and dialogs.
+        /// Builds the left navigation panel used to open primary screens and dialogs.
         /// </summary>
-        /// <returns>A fully configured navigation <see cref="Panel"/>.</returns>
+        /// <returns>The configured navigation panel.</returns>
         private Panel BuildNavigationPanel()
         {
             Panel navigationPanel = new()
@@ -298,10 +288,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Creates a standardized navigation button for the left-side menu.
+        /// Creates a navigation button with shared sizing.
         /// </summary>
-        /// <param name="text">The text to display on the button.</param>
-        /// <returns>A configured navigation <see cref="Button"/>.</returns>
+        /// <param name="text">The button text.</param>
+        /// <returns>The configured navigation button.</returns>
         private static Button CreateNavigationButton(string text)
         {
             return new Button
@@ -313,8 +303,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Builds the main form layout, including the menu strip,
-        /// navigation panel, and central content area.
+        /// Builds the main form layout with menu, navigation, and content regions.
         /// </summary>
         private void BuildLayout()
         {

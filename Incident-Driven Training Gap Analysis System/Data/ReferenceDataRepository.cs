@@ -7,13 +7,9 @@
  * Layer: Data Persistence Layer
  * 
  * Purpose:
- * This class is responsible for accessing the reference data corresponding to the domain classes of the
- * program: shifts, lines, equipment, and SOPs. It provides methods to retrieve all reference data for
- * populating dropdowns and selection lists in the user interface, as well as methods
- * to retrieve equipment by line and SOPs by equipment for dependent dropdown functionality. Additionally,
- * it includes a method to seed the database with default reference data if it has not already been
- * initialized, ensuring that the application has the necessary data to function properly on startup.
-*/
+ * This class retrieves and seeds reference data used by the application,
+ * including shifts, lines, equipment, and SOPs.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
@@ -22,15 +18,14 @@ using Microsoft.Data.Sqlite;
 namespace Incident_Driven_Training_Gap_Analysis_System.Data
 {
     /// <summary>
-    /// Provides methods for retrieving and seeding reference data entities such as shifts, lines, equipment, and
-    /// standard operating procedures (SOPs) from the database. Supports UI population and dependent selection scenarios.
+    /// Provides database access methods for reference data.
     /// </summary>
     public class ReferenceDataRepository
     {
         private readonly DatabaseManager _databaseManager;
 
         /// <summary>
-        /// Default constructor that initializes the ReferenceDataRepository with a new instance of DatabaseManager.
+        /// Initializes a new instance of the <see cref="ReferenceDataRepository"/> class.
         /// </summary>
         public ReferenceDataRepository()
         {
@@ -38,19 +33,18 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Parameterized constructor for the test suite, allowing control over the database path for unit testing purposes.
+        /// Initializes a new instance of the <see cref="ReferenceDataRepository"/> class with a database manager.
         /// </summary>
-        /// <param name="databaseManager">The DatabaseManager instance to use for database operations. Cannot be null.</param>
+        /// <param name="databaseManager">The database manager to use.</param>
         public ReferenceDataRepository(DatabaseManager databaseManager)
         {
             _databaseManager = databaseManager;
         }
 
         /// <summary>
-        /// Retrieves all reference data entities, including shifts, lines, equipment, and SOPs, from the database.
-        /// Used on startup to populate dropdowns and selection lists in the UI.
+        /// Retrieves shifts, lines, equipment, and SOPs for UI selections and validation.
         /// </summary>
-        /// <returns>A populated ReferenceDataSet containing collections of shifts, lines, equipment, and SOPs.</returns>
+        /// <returns>A populated reference data set.</returns>
         public ReferenceDataSet GetAllReferenceData()
         {
             ReferenceDataSet referenceDataSet = new();
@@ -119,14 +113,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Retrieves a list of equipment associated with the specified production line.
-        /// Supports dependent dropdown functionality in the UI, allowing users to select a production line and view only the equipment assigned to that line. Each equipment item in the returned list will have its LineId property set to the specified lineId.
+        /// Retrieves equipment assigned to a specific production line.
         /// </summary>
-        /// <param name="lineId">The unique identifier of the production line for which to retrieve equipment. Must be a valid line ID.</param>
-        /// <returns>A list of <see cref="Equipment"/> objects assigned to the specified production line.</returns>
+        /// <param name="lineId">The production line identifier.</param>
+        /// <returns>A list of matching equipment.</returns>
         public List<Equipment> GetEquipmentByLine(int lineId)
         {
-            List<Equipment> equipmentList = new();
+            List<Equipment> equipmentList = [];
 
             using SqliteConnection connection = _databaseManager.OpenConnection();
 
@@ -150,14 +143,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Retrieves a list of standard operating procedures (SOPs) associated with the specified equipment.
-        /// Supports dependent dropdown functionality in the UI, allowing users to select equipment and view only the SOPs assigned to that equipment. Each SOP item in the returned list will have its EquipmentId property set to the specified equipmentId.
+        /// Retrieves SOPs assigned to a specific equipment item.
         /// </summary>
-        /// <param name="equipmentId">The unique identifier of the equipment for which to retrieve SOPs.</param>
-        /// <returns>A list of SOP objects associated with the specified equipment.</returns>
+        /// <param name="equipmentId">The equipment identifier.</param>
+        /// <returns>A list of matching SOPs.</returns>
         public List<SOP> GetSopsByEquipment(int equipmentId)
         {
-            List<SOP> sopList = new();
+            List<SOP> sopList = [];
 
             using SqliteConnection connection = _databaseManager.OpenConnection();
 
@@ -181,47 +173,40 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         }
 
         /// <summary>
-        /// Ensures that reference data exists in the database.
-        /// If reference data is already present, the method returns true without inserting anything.
-        /// If it is missing, the method inserts the default reference data within a transaction.
+        /// Ensures required reference data exists, inserting default records when the database is empty.
         /// </summary>
-        /// <returns>true if reference data is available or was successfully seeded; otherwise, false.</returns>
+        /// <returns>true if reference data exists or is inserted successfully; otherwise, false.</returns>
         public bool SeedReferenceDataIfNeeded()
         {
             try
             {
                 using SqliteConnection connection = _databaseManager.OpenConnection();
 
-                // Checks whether reference data has already been seeded by looking for records in the Line table.
-                // If records exist, the method returns true and skips inserting default reference data.
+                // The Line table is used as the marker for seeded reference data.
                 string checkSql = "SELECT COUNT(*) FROM Line;";
                 using (SqliteCommand checkCommand = new(checkSql, connection))
                 {
-                    long count = (long)checkCommand.ExecuteScalar();
+                    object? result = checkCommand.ExecuteScalar();
+                    long count = result is long value ? value : 0;
+
                     if (count > 0)
                     {
                         return true;
                     }
                 }
 
-                // Shifts
-                // The shift system is conventional and follows a standard 3-shift model. This is a common industry practice and provides a realistic framework for testing shift-based training gap analysis.
                 string insertShifts = @"
                 INSERT INTO Shift (name) VALUES
                 ('1st Shift'),
                 ('2nd Shift'),
                 ('3rd Shift');";
 
-                // Lines
-                // The lines are a sample of common packaging line configurations. The "NS" prefix denotes "non-serialized" lines, which handle products that do not require serialization and thus have different equipment and associated SOPs.
                 string insertLines = @"
                 INSERT INTO Line (name) VALUES
                 ('Bottle Line'),
                 ('NS Bottle Line'),
                 ('Tube Line')";
 
-                // Equipment
-                // The equipment list includes a variety of common packaging machines. Each equipment name is prefixed with its associated line for clarity and to ensure that the relationships between lines and equipment are well-defined for testing purposes.
                 string insertEquipment = @"
                 INSERT INTO Equipment (name, lineId) VALUES
                 ('Bottle Labeler', 1),
@@ -239,8 +224,6 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
                 ('Tube Pick and Place Robot', 3),
                 ('Tube Pack Off', 3);";
 
-                // SOP
-                // The SOP list includes a sample of standard operating procedures for each piece of equipment. Each SOP name is associated with its respective equipment to ensure that the relationships between equipment and SOPs are well-defined for testing purposes.
                 string insertSop = @"
                 INSERT INTO SOP (name, equipmentId) VALUES
                 ('Bottle Labeler Operation', 1),

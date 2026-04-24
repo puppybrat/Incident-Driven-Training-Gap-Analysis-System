@@ -7,15 +7,13 @@
  * Layer: Model
  * 
  * Purpose:
- * This class represents the outcome of an export operation.
- * It stores whether the export succeeded and the message associated
- * with the result of the export attempt.
+ * This class represents the result of an export operation, including success status and result messaging.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Represents the outcome of an export operation.
+    /// Represents the result of an export operation.
     /// </summary>
     public class ExportSummary
     {

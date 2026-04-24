@@ -7,11 +7,9 @@
  * Layer: User Interface Layer
  * 
  * Purpose:
- * This user control provides the interface for configuring rule thresholds and evaluation behavior.
- * It dynamically loads and displays current rule settings, supports user modifications,
- * constructs a RuleConfig domain object, and passes it to the application layer for validation,
- * processing, and persistence.
-*/
+ * This user control provides the interface for viewing, editing, saving,
+ * and resetting rule configuration settings.
+ */
 
 using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
@@ -20,9 +18,7 @@ using Incident_Driven_Training_Gap_Analysis_System.Models;
 namespace Incident_Driven_Training_Gap_Analysis_System.UI
 {
     /// <summary>
-    /// Represents a user control for viewing and configuring rule thresholds and evaluation behavior.
-    /// It provides fields for threshold, grouping type, time window, and flag-enabled status,
-    /// and supports validation, user feedback, and loading persisted rule settings into the UI.
+    /// Provides the user interface for viewing and editing rule configuration settings.
     /// </summary>
     public partial class RuleConfigForm : UserControl
     {
@@ -40,7 +36,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         private static readonly string[] TimeWindowOptions = RuleConfig.TimeWindowOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RuleConfigForm"/> class, builds the layout, and loads configured rules.
+        /// Initializes a new instance of the <see cref="RuleConfigForm"/> class.
         /// </summary>
         public RuleConfigForm()
         {
@@ -50,8 +46,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Loads the persisted rule configuration and applies it to the UI.
-        /// If no persisted configuration is available, defaults are loaded.
+        /// Loads the current rule configuration and applies it to the form controls.
         /// </summary>
         public void LoadCurrentRules()
         {
@@ -75,11 +70,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
             }
 
             SetStatus("Rule configuration saved successfully.");
-            
         }
 
         /// <summary>
-        /// Restores default rule values in both the UI and the data store if supported.
+        /// Restores default rule values in the UI and data store.
         /// </summary>
         public void ResetDefaults()
         {
@@ -89,9 +83,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Creates a new RuleConfig instance using the current values from the associated UI controls.
+        /// Builds a rule configuration from the current form values.
         /// </summary>
-        /// <returns>A RuleConfig object populated with the values from the threshold, grouping type, time window, and flag enabled controls.</returns>
+        /// <returns>The populated rule configuration.</returns>
         private RuleConfig BuildRuleConfigFromControls()
         {
             return new RuleConfig
@@ -104,11 +98,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Applies the specified rule configuration to the associated user interface controls.
+        /// Applies rule configuration values to threshold, grouping, time window, and flagging controls.
         /// </summary>
-        /// <remarks>This method updates the values of threshold, grouping type, time window, and flag
-        /// enabled controls to reflect the provided configuration.</remarks>
-        /// <param name="ruleConfig">The rule configuration whose values are used to update the corresponding controls. Cannot be null.</param>
+        /// <param name="ruleConfig">The rule configuration to display.</param>
         private void ApplyRuleConfigToControls(RuleConfig ruleConfig)
         {
             _nudThreshold.Value = Math.Min(_nudThreshold.Maximum, Math.Max(_nudThreshold.Minimum, ruleConfig.ThresholdValue));
@@ -118,12 +110,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Displays validation error messages to the user based on the results of a validation operation.
+        /// Displays rule validation errors to the user.
         /// </summary>
-        /// <remarks>If validation errors are present, each error message is shown to the user in a
-        /// message box. If no specific errors are provided, a generic validation failure message is
-        /// displayed.</remarks>
-        /// <param name="validationResult">The result of the validation operation containing any validation errors to display. Cannot be null.</param>
+        /// <param name="validationResult">The validation result to display.</param>
         private void ShowValidationErrors(ValidationResult validationResult)
         {
             SetStatus("Rule configuration contains validation errors.");
@@ -139,9 +128,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Sets the status message displayed to the user.
+        /// Updates the status label, using the default status text when the message is blank.
         /// </summary>
-        /// <param name="message">The message to display in the status label. Can be null or empty to clear the status.</param>
+        /// <param name="message">The status message to display.</param>
         private void SetStatus(string message)
         {
             _lblStatus.Text = string.IsNullOrWhiteSpace(message)
@@ -150,13 +139,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Selects the specified value in the provided ComboBox, or selects a fallback value if the specified value is null, empty, or not present in the ComboBox items.
+        /// Selects a combo box value or falls back to a default value.
         /// </summary>
-        /// <param name="comboBox">The ComboBox control in which to select the value. Cannot be null.</param>
-        /// <param name="value">The value to select in the ComboBox. If null, empty, or not found in the ComboBox items, the fallback value
-        /// is selected instead.</param>
-        /// <param name="fallback">The value to select if the specified value is null, empty, or not present in the ComboBox items. Must be
-        /// present in the ComboBox items to be selected.</param>
+        /// <param name="comboBox">The combo box to update.</param>
+        /// <param name="value">The preferred value.</param>
+        /// <param name="fallback">The fallback value.</param>
         private static void SelectComboValue(ComboBox comboBox, string? value, string fallback)
         {
             string resolvedValue = string.IsNullOrWhiteSpace(value) ? fallback : value;
@@ -172,7 +159,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         }
 
         /// <summary>
-        /// Constructs the layout of the rule configuration form by creating and configuring various controls such as labels, numeric up-down, combo boxes, check box, and buttons. The controls are arranged using a TableLayoutPanel for a structured and organized appearance. Event handlers are attached to the buttons to handle user interactions for saving and resetting the rule configuration.
+        /// Builds the rule configuration form layout and wires control events.
         /// </summary>
         private void BuildLayout()
         {

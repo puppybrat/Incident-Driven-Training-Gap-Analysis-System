@@ -7,15 +7,13 @@
  * Layer: Model
  * 
  * Purpose:
- * This static class defines the available report preset names used throughout the application.
- * These constants provide a centralized and consistent source for preset labels used in the
- * user interface and report generation logic.
+ * This class defines report preset names used for report configuration and UI selection.
  */
 
 namespace Incident_Driven_Training_Gap_Analysis_System.Models
 {
     /// <summary>
-    /// Defines the available report preset names used for report configuration and generation.
+    /// Defines constant values for report preset options.
     /// </summary>
     public static class ReportPresetNames
     {
