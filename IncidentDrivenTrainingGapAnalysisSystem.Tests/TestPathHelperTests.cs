@@ -1,7 +1,20 @@
-﻿using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
+﻿/*
+ * File: TestPathHelperTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for resolving test data, CSV file, and test database paths.
+ */
+
+using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests TestPathHelper behavior for resolving test data and file paths.
+    /// </summary>
     [TestFixture]
     public class TestPathHelperTests
     {

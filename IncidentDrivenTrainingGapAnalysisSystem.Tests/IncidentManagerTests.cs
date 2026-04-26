@@ -1,4 +1,15 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Application;
+﻿/*
+ * File: IncidentManagerTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for incident validation, incident creation,
+ * database-backed persistence, and reference data lookup behavior.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
@@ -6,6 +17,9 @@ using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests IncidentManager behavior for validating and creating incident records.
+    /// </summary>
     [TestFixture]
     public class IncidentManagerTests
     {

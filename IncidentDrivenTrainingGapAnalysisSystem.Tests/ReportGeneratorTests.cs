@@ -1,4 +1,15 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Application;
+﻿/*
+ * File: ReportGeneratorTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for report filtering, grouping, missing SOP handling,
+ * report result construction, request metadata copying, and threshold evaluation integration.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
@@ -6,6 +17,9 @@ using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests ReportGenerator behavior for building report results from filtered and grouped incident data.
+    /// </summary>
     [TestFixture]
     public class ReportGeneratorTests
     {

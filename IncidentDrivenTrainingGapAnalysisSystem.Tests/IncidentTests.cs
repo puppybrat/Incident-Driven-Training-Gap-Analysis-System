@@ -1,7 +1,20 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Domain;
+﻿/*
+ * File: IncidentTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for domain-level Incident validation behavior.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Domain;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests Incident domain behavior for determining whether required creation fields are complete.
+    /// </summary>
     [TestFixture]
     public class IncidentTests
     {

@@ -1,8 +1,23 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Data;
+﻿/*
+ * File: DatabaseManagerTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for database schema initialization, SQLite connection behavior,
+ * foreign key enforcement, transaction handling, and connection string configuration.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Data;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests DatabaseManager behavior for schema creation, connection setup, foreign key enforcement,
+    /// and transaction commit or rollback behavior.
+    /// </summary>
     [TestFixture]
     public class DatabaseManagerTests
     {

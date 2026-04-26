@@ -1,4 +1,15 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Application;
+﻿/*
+ * File: ExportManagerTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for dataset export, report export, export path validation,
+ * filtered export behavior, and CSV output generation.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
@@ -6,6 +17,9 @@ using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests ExportManager behavior for exporting incident datasets and report results to CSV files.
+    /// </summary>
     [TestFixture]
     public class ExportManagerTests
     {

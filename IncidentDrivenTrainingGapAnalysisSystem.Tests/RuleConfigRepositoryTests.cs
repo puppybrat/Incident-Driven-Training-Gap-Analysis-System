@@ -1,9 +1,23 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Data;
+﻿/*
+ * File: RuleConfigRepositoryTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for saving, loading, resetting, and updating persisted
+ * rule configuration values.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests RuleConfigRepository behavior for persistent rule configuration storage and retrieval.
+    /// </summary>
     [TestFixture]
     public class RuleConfigRepositoryTests
     {

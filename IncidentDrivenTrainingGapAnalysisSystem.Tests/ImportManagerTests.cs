@@ -1,10 +1,24 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Application;
+﻿/*
+ * File: ImportManagerTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for CSV import validation, header validation, row processing,
+ * malformed row rejection, reference validation, blank SOP handling, and import summaries.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Application;
 using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests ImportManager behavior for validating and importing CSV incident data.
+    /// </summary>
     [TestFixture]
     public class ImportManagerTests
     {

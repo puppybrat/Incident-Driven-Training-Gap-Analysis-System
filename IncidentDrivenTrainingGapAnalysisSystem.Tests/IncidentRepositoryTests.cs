@@ -1,10 +1,24 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Data;
+﻿/*
+ * File: IncidentRepositoryTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for inserting, retrieving, and filtering incident records
+ * through the SQLite-backed incident repository.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests IncidentRepository behavior for incident persistence and filtered retrieval.
+    /// </summary>
     [TestFixture]
     public class IncidentRepositoryTests
     {

@@ -1,8 +1,22 @@
-﻿using Incident_Driven_Training_Gap_Analysis_System.Data;
+﻿/*
+ * File: ReferenceDataRepositoryTests.cs
+ * Author: Sarah Portillo
+ * Date: 04/26/2026
+ * Project: Incident-Driven Training Gap Analysis System
+ * 
+ * Purpose:
+ * Contains NUnit tests for seeding, retrieving, and filtering line, shift,
+ * equipment, and SOP reference data.
+ */
+
+using Incident_Driven_Training_Gap_Analysis_System.Data;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    /// <summary>
+    /// Tests ReferenceDataRepository behavior for seeded reference data retrieval and filtering.
+    /// </summary>
     [TestFixture]
     public class ReferenceDataRepositoryTests
     {
