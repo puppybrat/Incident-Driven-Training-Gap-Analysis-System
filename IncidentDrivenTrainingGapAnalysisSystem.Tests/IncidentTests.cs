@@ -1,6 +1,4 @@
 ﻿using Incident_Driven_Training_Gap_Analysis_System.Domain;
-using NUnit.Framework;
-using System;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
@@ -12,7 +10,6 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         {
             var incident = new Incident
             {
-                IncidentId = 0,
                 OccurredAt = default,
                 EquipmentId = 0,
                 ShiftId = 0,
@@ -29,8 +26,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         {
             var incident = new Incident
             {
-                IncidentId = 1001,
-                OccurredAt = new DateTime(2026, 4, 1, 8, 30, 0),
+                OccurredAt = DateTime.Now.AddDays(-1),
                 EquipmentId = 1,
                 ShiftId = 1,
                 SopId = null
@@ -42,37 +38,67 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         }
 
         [Test]
-        public void HasSopReference_ReturnsTrue_WhenSopIdHasValue()
+        public void IsCompleteForCreation_ReturnsFalse_WhenOccurredAtIsInFuture()
         {
             var incident = new Incident
             {
-                IncidentId = 1002,
-                OccurredAt = new DateTime(2026, 4, 1, 9, 0, 0),
-                EquipmentId = 1,
-                ShiftId = 1,
-                SopId = 5
-            };
-
-            bool result = incident.HasSopReference();
-
-            Assert.That(result, Is.True);
-        }
-
-        [Test]
-        public void HasSopReference_ReturnsFalse_WhenSopIdIsNull()
-        {
-            var incident = new Incident
-            {
-                IncidentId = 1003,
-                OccurredAt = new DateTime(2026, 4, 1, 10, 0, 0),
+                OccurredAt = DateTime.Now.AddDays(1),
                 EquipmentId = 1,
                 ShiftId = 1,
                 SopId = null
             };
 
-            bool result = incident.HasSopReference();
+            bool result = incident.IsCompleteForCreation();
 
             Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void IsCompleteForCreation_ReturnsFalse_WhenEquipmentIdIsMissing()
+        {
+            var incident = new Incident
+            {
+                OccurredAt = DateTime.Now.AddDays(-1),
+                EquipmentId = 0,
+                ShiftId = 1,
+                SopId = null
+            };
+
+            bool result = incident.IsCompleteForCreation();
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void IsCompleteForCreation_ReturnsFalse_WhenShiftIdIsMissing()
+        {
+            var incident = new Incident
+            {
+                OccurredAt = DateTime.Now.AddDays(-1),
+                EquipmentId = 1,
+                ShiftId = 0,
+                SopId = null
+            };
+
+            bool result = incident.IsCompleteForCreation();
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void IsCompleteForCreation_ReturnsTrue_WhenSopIdIsMissing()
+        {
+            var incident = new Incident
+            {
+                OccurredAt = DateTime.Now.AddDays(-1),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = null
+            };
+
+            bool result = incident.IsCompleteForCreation();
+
+            Assert.That(result, Is.True);
         }
     }
 }

@@ -1,7 +1,6 @@
-﻿using NUnit.Framework;
-
-namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
+﻿namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
+    [TestFixture]
     public class SmokeTests
     {
         [Test]

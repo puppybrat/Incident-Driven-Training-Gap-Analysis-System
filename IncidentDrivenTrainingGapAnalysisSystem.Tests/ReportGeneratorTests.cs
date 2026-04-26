@@ -4,9 +4,6 @@ using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
 
-
-using NUnit.Framework;
-
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
     [TestFixture]
@@ -20,6 +17,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             string dbPath = TestPathHelper.GetDatabasePath("training_gap_analysis.db");
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
+
+            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
         [TearDown]
@@ -35,54 +35,315 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         }
 
         [Test]
-        public void GenerateReport_ReturnsFormattedGroupedResults_ForRequestedLineAndOutputType()
+        public void GenerateReport_GroupsMatchingIncidents_WhenGroupingFieldsMatch()
         {
             var repository = new IncidentRepository(_databaseManager);
 
-            repository.InsertIncident(new Incident
+            bool firstInsert = repository.InsertIncident(new Incident
             {
-                IncidentId = 7001,
                 OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
-                EquipmentId = 1, // Line 1
+                EquipmentId = 1,
                 ShiftId = 1,
                 SopId = 1
             });
 
-            repository.InsertIncident(new Incident
+            bool secondInsert = repository.InsertIncident(new Incident
             {
-                IncidentId = 7002,
                 OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
-                EquipmentId = 1, // Line 1
-                ShiftId = 2,
+                EquipmentId = 1,
+                ShiftId = 1,
                 SopId = 1
             });
 
-            repository.InsertIncident(new Incident
+            bool otherEquipmentInsert = repository.InsertIncident(new Incident
             {
-                IncidentId = 7003,
                 OccurredAt = new DateTime(2026, 4, 10, 10, 0, 0),
-                EquipmentId = 2, // Line 2
+                EquipmentId = 2,
                 ShiftId = 1,
-                SopId = 2
+                SopId = 3
             });
+
+            Assert.That(firstInsert, Is.True);
+            Assert.That(secondInsert, Is.True);
+            Assert.That(otherEquipmentInsert, Is.True);
 
             var generator = new ReportGenerator(_databaseManager);
 
             var request = new ReportRequest
             {
-                PresetName = "Incidents per Equipment",
-                Filters = new FilterSet { LineId = 1 },
+                PresetName = ReportPresetNames.IncidentsPerEquipment,
+                Filters = new FilterSet
+                {
+                    EquipmentId = 1,
+                    StartDate = new DateTime(2026, 4, 10),
+                    EndDate = new DateTime(2026, 4, 10)
+                },
                 GroupingType = "Equipment",
-                OutputType = "Table"
+                OutputType = "Table",
+                IncludeEquipment = true
             };
 
             var result = generator.GenerateReport(request);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.OutputType, Is.EqualTo("Table"));
-            Assert.That(result.Results, Has.Count.EqualTo(1));
-            Assert.That(result.Results[0].DisplayLabel, Does.Contain("1"));
-            Assert.That(result.Results[0].DisplayValue, Is.EqualTo("2"));
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+
+            ReportRow row = result.Rows[0];
+
+            Assert.That(row.Equipment, Is.EqualTo("Bottle Labeler"));
+            Assert.That(row.GroupValue, Does.Contain("Bottle Labeler"));
+            Assert.That(row.IncidentCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GenerateReport_ThrowsArgumentNullException_WhenRequestIsNull()
+        {
+            var generator = new ReportGenerator(_databaseManager);
+
+            Assert.Throws<ArgumentNullException>(() => generator.GenerateReport(null!));
+        }
+
+        [Test]
+        public void GenerateReport_CopiesRequestMetadata_ToReportResult()
+        {
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.IncidentsPerShiftByLine,
+                Filters = new FilterSet(),
+                GroupingType = "Shift",
+                OutputType = "Chart",
+                IncludeLine = true,
+                IncludeShift = true,
+                IncludeEquipment = false,
+                IncludeSop = true
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.PresetName, Is.EqualTo(ReportPresetNames.IncidentsPerShiftByLine));
+            Assert.That(result.OutputType, Is.EqualTo("Chart"));
+            Assert.That(result.IncludeLine, Is.True);
+            Assert.That(result.IncludeShift, Is.True);
+            Assert.That(result.IncludeEquipment, Is.False);
+            Assert.That(result.IncludeSop, Is.True);
+        }
+
+        [Test]
+        public void GenerateReport_UsesMissingSopLabel_WhenIncidentHasNullSopId()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 11, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = null
+            });
+
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.None,
+                Filters = new FilterSet(),
+                GroupingType = "SOP",
+                OutputType = "Table",
+                IncludeSop = true
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
+            Assert.That(result.Rows[0].GroupValue, Does.Contain("Missing SOP"));
+            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void GenerateReport_ReturnsOnlyMissingSopIncidents_WhenMissingSopPresetIsUsed()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 12, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = null
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 12, 9, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.IncidentsPerMissingSopByLine,
+                Filters = new FilterSet(),
+                GroupingType = "Line",
+                OutputType = "Table",
+                IncludeLine = true,
+                IncludeSop = true
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
+            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void GenerateReport_ReturnsAllIncidentsGroup_WhenNoFieldsAreIncluded()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 13, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 13, 9, 0, 0),
+                EquipmentId = 2,
+                ShiftId = 2,
+                SopId = 3
+            });
+
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.None,
+                Filters = new FilterSet(),
+                GroupingType = "Line",
+                OutputType = "Table",
+                IncludeLine = false,
+                IncludeShift = false,
+                IncludeEquipment = false,
+                IncludeSop = false
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            Assert.That(result.Rows[0].GroupValue, Is.EqualTo("All Incidents"));
+            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GenerateReport_BuildsGroupValueStartingWithShift_WhenGroupingTypeIsShift()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.IncidentsPerShiftByLine,
+                Filters = new FilterSet(),
+                GroupingType = "Shift",
+                OutputType = "Table",
+                IncludeLine = true,
+                IncludeShift = true,
+                IncludeEquipment = true,
+                IncludeSop = true
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            Assert.That(result.Rows[0].GroupValue, Is.EqualTo("1st Shift | Bottle Line | Bottle Labeler | Bottle Labeler Operation"));
+        }
+
+        [Test]
+        public void GenerateReport_FlagsRow_WhenIncidentCountExceedsThreshold()
+        {
+            using (var connection = _databaseManager.OpenConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+            INSERT OR REPLACE INTO RuleConfig
+                (ruleConfigId, thresholdValue, groupingType, timeWindow, flagEnabled)
+            VALUES
+                (1, 3, 'Equipment', '7 days', 1);";
+
+                command.ExecuteNonQuery();
+            }
+
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 10, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 11, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            var generator = new ReportGenerator(_databaseManager);
+
+            var request = new ReportRequest
+            {
+                PresetName = ReportPresetNames.IncidentsPerEquipment,
+                Filters = new FilterSet(),
+                GroupingType = "Equipment",
+                OutputType = "Table",
+                IncludeEquipment = true
+            };
+
+            var result = generator.GenerateReport(request);
+
+            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            Assert.That(result.Rows[0].Equipment, Is.EqualTo("Bottle Labeler"));
+            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(4));
+            Assert.That(result.Rows[0].IsFlagged, Is.True);
         }
 
         [Test]
@@ -90,23 +351,24 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         {
             var repository = new IncidentRepository(_databaseManager);
 
-            repository.InsertIncident(new Incident
+            bool firstInsert = repository.InsertIncident(new Incident
             {
-                IncidentId = 6001,
                 OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
-                EquipmentId = 1, // seeded under Line 1
+                EquipmentId = 1,
                 ShiftId = 1,
                 SopId = 1
             });
 
-            repository.InsertIncident(new Incident
+            bool secondInsert = repository.InsertIncident(new Incident
             {
-                IncidentId = 6002,
                 OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
-                EquipmentId = 2, // seeded under Line 2
+                EquipmentId = 2,
                 ShiftId = 1,
-                SopId = 2
+                SopId = 3
             });
+
+            Assert.That(firstInsert, Is.True);
+            Assert.That(secondInsert, Is.True);
 
             var generator = new ReportGenerator(_databaseManager);
 
@@ -120,123 +382,45 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.ApplyFilters(request);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Select(i => i.IncidentId), Is.EquivalentTo(new[] { 6001 }));
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
         }
 
         [Test]
-        public void AggregateIncidents_ReturnsSeparateGroups_WhenEquipmentIdsDiffer()
+        public void ApplyFilters_ThrowsArgumentNullException_WhenRequestIsNull()
         {
             var generator = new ReportGenerator(_databaseManager);
 
-            var incidents = new List<Incident>
-            {
-                new Incident
-                {
-                    IncidentId = 3003,
-                    EquipmentId = 1,
-                    ShiftId = 1,
-                    OccurredAt = new DateTime(2026, 4, 10)
-                },
-                new Incident
-                {
-                    IncidentId = 3004,
-                    EquipmentId = 2,
-                    ShiftId = 1,
-                    OccurredAt = new DateTime(2026, 4, 10)
-                }
-            };
-
-            var result = generator.AggregateIncidents(incidents);
-
-            Assert.That(result, Has.Count.EqualTo(2));
-            Assert.That(result.Any(r => r.GroupLabel == "1" && r.IncidentCount == 1), Is.True);
-            Assert.That(result.Any(r => r.GroupLabel == "2" && r.IncidentCount == 1), Is.True);
+            Assert.Throws<ArgumentNullException>(() => generator.ApplyFilters(null!));
         }
 
         [Test]
-        public void AggregateIncidents_ReturnsSingleEquipmentGroup_WithCorrectCount()
+        public void ApplyFilters_UsesEmptyFilterSet_WhenFiltersAreNull()
         {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
             var generator = new ReportGenerator(_databaseManager);
 
-            var incidents = new List<Incident>
+            var request = new ReportRequest
             {
-                new Incident
-                {
-                    IncidentId = 3001,
-                    EquipmentId = 1,
-                    ShiftId = 1,
-                    OccurredAt = new DateTime(2026, 4, 10)
-                },
-                new Incident
-                {
-                    IncidentId = 3002,
-                    EquipmentId = 1,
-                    ShiftId = 2,
-                    OccurredAt = new DateTime(2026, 4, 10)
-                }
+                Filters = null,
+                GroupingType = "Line",
+                OutputType = "Table"
             };
 
-            var result = generator.AggregateIncidents(incidents);
+            var result = generator.ApplyFilters(request);
 
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].GroupLabel, Is.EqualTo("1"));
-            Assert.That(result[0].IncidentCount, Is.EqualTo(2));
-            Assert.That(result[0].IsFlagged, Is.False);
         }
 
-        [Test]
-        public void FormatResults_ReturnsFormattedResults_FromAggregateCollection()
-        {
-            var generator = new ReportGenerator(_databaseManager);
-
-            var aggregateCollection = new List<AggregateResult>
-            {
-                new AggregateResult
-                {
-                    GroupLabel = "Equipment 1",
-                    IncidentCount = 2,
-                    IsFlagged = false
-                },
-                new AggregateResult
-                {
-                    GroupLabel = "Equipment 2",
-                    IncidentCount = 1,
-                    IsFlagged = false
-                }
-            };
-
-            var result = generator.FormatResults(aggregateCollection);
-
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result[0].DisplayLabel, Is.EqualTo("Equipment 1"));
-            Assert.That(result[0].DisplayValue, Is.EqualTo("2"));
-        }
-
-        [Test]
-        public void BuildReportResult_ReturnsFinalOutputObject_WithFormattedResults()
-        {
-            var generator = new ReportGenerator(_databaseManager);
-
-            var formattedResults = new List<FormattedResult>
-            {
-                new FormattedResult
-                {
-                    DisplayLabel = "Equipment 1",
-                    DisplayValue = "2"
-                },
-                new FormattedResult
-                {
-                    DisplayLabel = "Equipment 2",
-                    DisplayValue = "1"
-                }
-            };
-
-            var result = generator.BuildReportResult(formattedResults);
-
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Results, Is.Not.Null);
-            Assert.That(result.Results.Count, Is.EqualTo(2));
-        }
     }
 }

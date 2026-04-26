@@ -23,6 +23,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
     /// </summary>
     public class ReportGenerator
     {
+        private readonly DatabaseManager _databaseManager;
         private readonly IncidentRepository _incidentRepository;
         private readonly ReferenceDataRepository _referenceDataRepository;
 
@@ -31,6 +32,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// </summary>
         public ReportGenerator()
         {
+            _databaseManager = new DatabaseManager();
             _incidentRepository = new IncidentRepository();
             _referenceDataRepository = new ReferenceDataRepository();
         }
@@ -41,6 +43,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <param name="databaseManager">The database manager used to create report repositories.</param>
         public ReportGenerator(DatabaseManager databaseManager)
         {
+            _databaseManager = databaseManager;
             _incidentRepository = new IncidentRepository(databaseManager);
             _referenceDataRepository = new ReferenceDataRepository(databaseManager);
         }
@@ -61,7 +64,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             List<Incident> filteredIncidents = ApplyFilters(reportRequest);
             List<ReportRow> rows = BuildRows(filteredIncidents, reportRequest);
 
-            RuleEvaluator evaluator = new();
+            RuleEvaluator evaluator = new(_databaseManager);
             RuleConfig config = evaluator.LoadCurrentRuleConfig();
             rows = evaluator.EvaluateThresholds(rows, config);
 

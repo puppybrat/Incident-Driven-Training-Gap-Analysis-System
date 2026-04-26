@@ -3,7 +3,6 @@ using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
-using NUnit.Framework;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
@@ -33,17 +32,16 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         }
 
         [Test]
-        public void ValidateRuleConfig_ReturnsFailure_WhenThresholdIsInvalid()
+        public void ValidateRuleConfig_ReturnsFailure_WhenThresholdIsNegative()
         {
             var evaluator = new RuleEvaluator(_databaseManager);
 
             var ruleConfig = new RuleConfig
             {
-                ThresholdValue = 0,
+                ThresholdValue = -1,
                 GroupingType = "Line",
-                TimeWindow = "30Days",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                TimeWindow = "7 days",
+                FlagEnabled = true
             };
 
             var result = evaluator.ValidateRuleConfig(ruleConfig);
@@ -61,9 +59,8 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 3,
                 GroupingType = "InvalidGrouping",
-                TimeWindow = "30Days",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                TimeWindow = "7 days",
+                FlagEnabled = true
             };
 
             var result = evaluator.ValidateRuleConfig(ruleConfig);
@@ -82,14 +79,44 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 ThresholdValue = 3,
                 GroupingType = "Line",
                 TimeWindow = "InvalidWindow",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                FlagEnabled = true
             };
 
             var result = evaluator.ValidateRuleConfig(ruleConfig);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.IsValid, Is.False);
+        }
+
+        [Test]
+        public void ValidateRuleConfig_ReturnsFailure_WhenConfigIsNull()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var result = evaluator.ValidateRuleConfig(null!);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Rule configuration is required."));
+        }
+
+        [Test]
+        public void ValidateRuleConfig_ReturnsSuccess_WhenConfigIsValid()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var ruleConfig = new RuleConfig
+            {
+                ThresholdValue = 3,
+                GroupingType = "Line",
+                TimeWindow = "7 days",
+                FlagEnabled = true
+            };
+
+            var result = evaluator.ValidateRuleConfig(ruleConfig);
+
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
         }
 
         [Test]
@@ -100,9 +127,8 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 3,
                 GroupingType = "Line",
-                TimeWindow = "30Days",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                TimeWindow = "7 days",
+                FlagEnabled = true
             });
 
             var evaluator = new RuleEvaluator(_databaseManager);
@@ -111,21 +137,20 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             Assert.That(result, Is.Not.Null);
             Assert.That(result.ThresholdValue, Is.EqualTo(3));
             Assert.That(result.GroupingType, Is.EqualTo("Line"));
-            Assert.That(result.TimeWindow, Is.EqualTo("30Days"));
+            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
             Assert.That(result.FlagEnabled, Is.True);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo("Default"));
         }
 
         [Test]
-        public void EvaluateThresholds_FlagsResults_WhenCountsMeetOrExceedThreshold()
+        public void EvaluateThresholds_FlagsRows_WhenCountsMeetOrExceedThreshold()
         {
             var evaluator = new RuleEvaluator(_databaseManager);
 
-            var reportData = new List<AggregateResult>
+            var reportData = new List<ReportRow>
             {
-                new AggregateResult
+                new ReportRow
                 {
-                    GroupLabel = "Line 1",
+                    GroupValue = "Line 1",
                     IncidentCount = 3,
                     IsFlagged = false
                 }
@@ -135,28 +160,26 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 3,
                 GroupingType = "Line",
-                TimeWindow = "30Days",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                TimeWindow = "7 days",
+                FlagEnabled = true
             };
 
             var result = evaluator.EvaluateThresholds(reportData, ruleConfig);
 
-            Assert.That(result, Is.Not.Null);
             Assert.That(result.Count, Is.EqualTo(1));
             Assert.That(result[0].IsFlagged, Is.True);
         }
 
         [Test]
-        public void EvaluateThresholds_DoesNotFlagResults_WhenCountsAreBelowThreshold()
+        public void EvaluateThresholds_DoesNotFlagRows_WhenBelowThreshold()
         {
             var evaluator = new RuleEvaluator(_databaseManager);
 
-            var reportData = new List<AggregateResult>
+            var reportData = new List<ReportRow>
             {
-                new AggregateResult
+                new ReportRow
                 {
-                    GroupLabel = "Line 1",
+                    GroupValue = "Line 1",
                     IncidentCount = 2,
                     IsFlagged = false
                 }
@@ -166,45 +189,147 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 3,
                 GroupingType = "Line",
-                TimeWindow = "30Days",
-                FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                TimeWindow = "7 days",
+                FlagEnabled = true
             };
 
             var result = evaluator.EvaluateThresholds(reportData, ruleConfig);
 
-            Assert.That(result, Is.Not.Null);
             Assert.That(result.Count, Is.EqualTo(1));
             Assert.That(result[0].IsFlagged, Is.False);
         }
 
         [Test]
-        public void FlagResults_ReturnsFlaggedAggregateResults()
+        public void EvaluateThresholds_DoesNotFlag_WhenFlaggingIsDisabled()
         {
             var evaluator = new RuleEvaluator(_databaseManager);
 
-            var reportData = new List<AggregateResult>
+            var reportData = new List<ReportRow>
             {
-                new AggregateResult
+                new ReportRow
                 {
-                    GroupLabel = "Line 1",
-                    IncidentCount = 3,
-                    IsFlagged = true
-                },
-                new AggregateResult
-                {
-                    GroupLabel = "Line 2",
-                    IncidentCount = 1,
+                    GroupValue = "Line 1",
+                    IncidentCount = 10,
                     IsFlagged = false
                 }
             };
 
-            var result = evaluator.FlagResults(reportData);
+            var ruleConfig = new RuleConfig
+            {
+                ThresholdValue = 3,
+                GroupingType = "Line",
+                TimeWindow = "7 days",
+                FlagEnabled = false
+            };
+
+            var result = evaluator.EvaluateThresholds(reportData, ruleConfig);
+
+            Assert.That(result[0].IsFlagged, Is.False);
+        }
+
+        [Test]
+        public void EvaluateThresholds_ReturnsEmptyList_WhenInputIsNull()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var result = evaluator.EvaluateThresholds(null, null);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(1));
-            Assert.That(result[0].GroupLabel, Is.EqualTo("Line 1"));
+            Assert.That(result, Is.Empty);
+        }
+
+        [Test]
+        public void EvaluateThresholds_ClearsExistingFlag_WhenRowIsBelowThreshold()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var reportData = new List<ReportRow>
+            {
+                new ReportRow
+                {
+                    GroupValue = "Line 1",
+                    IncidentCount = 2,
+                    IsFlagged = true
+                }
+            };
+
+            var ruleConfig = new RuleConfig
+            {
+                ThresholdValue = 3,
+                GroupingType = "Line",
+                TimeWindow = "7 days",
+                FlagEnabled = true
+            };
+
+            var result = evaluator.EvaluateThresholds(reportData, ruleConfig);
+
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].IsFlagged, Is.False);
+        }
+
+        [Test]
+        public void EvaluateThresholds_UsesDefaultConfig_WhenRuleConfigIsNull()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var reportData = new List<ReportRow>
+            {
+                new ReportRow
+                {
+                    GroupValue = "Line 1",
+                    IncidentCount = 5,
+                    IsFlagged = false
+                }
+            };
+
+            var result = evaluator.EvaluateThresholds(reportData, null);
+
+            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].IsFlagged, Is.True);
+        }
+
+        [Test]
+        public void SaveRuleConfig_ReturnsFailure_WhenConfigIsInvalid()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var invalidConfig = new RuleConfig
+            {
+                ThresholdValue = -1,
+                GroupingType = "Invalid",
+                TimeWindow = "Invalid",
+                FlagEnabled = true
+            };
+
+            var result = evaluator.SaveRuleConfig(invalidConfig);
+
+            Assert.That(result.IsValid, Is.False);
+        }
+
+        [Test]
+        public void SaveRuleConfig_ReturnsSuccess_AndPersistsConfig_WhenConfigIsValid()
+        {
+            var evaluator = new RuleEvaluator(_databaseManager);
+
+            var ruleConfig = new RuleConfig
+            {
+                ThresholdValue = 4,
+                GroupingType = "Equipment",
+                TimeWindow = "30 days",
+                FlagEnabled = false,
+                SelectedPresetBehavior = "RuntimeOnly"
+            };
+
+            var result = evaluator.SaveRuleConfig(ruleConfig);
+            var saved = evaluator.LoadCurrentRuleConfig();
+
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(saved.ThresholdValue, Is.EqualTo(4));
+            Assert.That(saved.GroupingType, Is.EqualTo("Equipment"));
+            Assert.That(saved.TimeWindow, Is.EqualTo("30 days"));
+            Assert.That(saved.FlagEnabled, Is.False);
+            Assert.That(saved.SelectedPresetBehavior, Is.EqualTo(string.Empty));
         }
     }
 }

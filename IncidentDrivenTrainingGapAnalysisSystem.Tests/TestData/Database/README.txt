@@ -1,2 +1,0 @@
-This folder holds SQLite database files created during tests or copied for test setup.
-This is not designed for production use, and should not be used as a template for production database storage. It is only intended for testing purposes, and may contain test data that is not suitable for production use.

@@ -1,8 +1,6 @@
 ﻿using Incident_Driven_Training_Gap_Analysis_System.Data;
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
-using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
-using NUnit.Framework;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
@@ -40,21 +38,23 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 3,
                 GroupingType = "Line",
-                TimeWindow = "30Days",
+                TimeWindow = "7 days",
                 FlagEnabled = true,
-                SelectedPresetBehavior = "Default"
+                SelectedPresetBehavior = string.Empty
             };
 
-            repository.SaveRuleConfig(config);
+            bool saveResult = repository.SaveRuleConfig(config);
 
             var result = repository.LoadRuleConfig();
+
+            Assert.That(saveResult, Is.True);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.ThresholdValue, Is.EqualTo(3));
             Assert.That(result.GroupingType, Is.EqualTo("Line"));
-            Assert.That(result.TimeWindow, Is.EqualTo("30Days"));
+            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
             Assert.That(result.FlagEnabled, Is.True);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo("Default"));
+            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
         }
 
         [Test]
@@ -66,7 +66,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 ThresholdValue = 7,
                 GroupingType = "Equipment",
-                TimeWindow = "90Days",
+                TimeWindow = "90 days",
                 FlagEnabled = false,
                 SelectedPresetBehavior = "Custom"
             });
@@ -74,9 +74,58 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.ResetRuleConfigToDefaults();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.Not.EqualTo(7));
-            Assert.That(result.GroupingType, Is.Not.EqualTo("Equipment"));
-            Assert.That(result.TimeWindow, Is.Not.EqualTo("90Days"));
+            Assert.That(result.ThresholdValue, Is.EqualTo(RuleConfig.CreateDefault().ThresholdValue));
+            Assert.That(result.GroupingType, Is.EqualTo(RuleConfig.CreateDefault().GroupingType));
+            Assert.That(result.TimeWindow, Is.EqualTo(RuleConfig.CreateDefault().TimeWindow));
+            Assert.That(result.FlagEnabled, Is.EqualTo(RuleConfig.CreateDefault().FlagEnabled));
+        }
+
+        [Test]
+        public void LoadRuleConfig_ReturnsDefaultConfiguration_WhenNoSavedConfigurationExists()
+        {
+            var repository = new RuleConfigRepository(_databaseManager);
+
+            var result = repository.LoadRuleConfig();
+            var expected = RuleConfig.CreateDefault();
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ThresholdValue, Is.EqualTo(expected.ThresholdValue));
+            Assert.That(result.GroupingType, Is.EqualTo(expected.GroupingType));
+            Assert.That(result.TimeWindow, Is.EqualTo(expected.TimeWindow));
+            Assert.That(result.FlagEnabled, Is.EqualTo(expected.FlagEnabled));
+        }
+
+        [Test]
+        public void SaveRuleConfig_UpdatesExistingConfiguration_WhenConfigurationAlreadyExists()
+        {
+            var repository = new RuleConfigRepository(_databaseManager);
+
+            repository.SaveRuleConfig(new RuleConfig
+            {
+                ThresholdValue = 3,
+                GroupingType = "Line",
+                TimeWindow = "7 days",
+                FlagEnabled = true,
+                SelectedPresetBehavior = string.Empty
+            });
+
+            bool saveResult = repository.SaveRuleConfig(new RuleConfig
+            {
+                ThresholdValue = 9,
+                GroupingType = "Equipment",
+                TimeWindow = "90 days",
+                FlagEnabled = false,
+                SelectedPresetBehavior = "RuntimeOnly"
+            });
+
+            var result = repository.LoadRuleConfig();
+
+            Assert.That(saveResult, Is.True);
+            Assert.That(result.ThresholdValue, Is.EqualTo(9));
+            Assert.That(result.GroupingType, Is.EqualTo("Equipment"));
+            Assert.That(result.TimeWindow, Is.EqualTo("90 days"));
+            Assert.That(result.FlagEnabled, Is.False);
+            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
         }
     }
 }

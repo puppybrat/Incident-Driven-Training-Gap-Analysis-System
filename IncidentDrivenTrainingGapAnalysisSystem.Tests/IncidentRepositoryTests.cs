@@ -2,7 +2,6 @@
 using Incident_Driven_Training_Gap_Analysis_System.Domain;
 using Incident_Driven_Training_Gap_Analysis_System.Models;
 using IncidentDrivenTrainingGapAnalysisSystem.Tests.Helpers;
-using NUnit.Framework;
 
 namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 {
@@ -17,6 +16,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             string dbPath = TestPathHelper.GetDatabasePath("training_gap_analysis.db");
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
+
+            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
         [TearDown]
@@ -38,7 +40,6 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var incident = new Incident
             {
-                IncidentId = 2001,
                 OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 1,
@@ -46,11 +47,38 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             };
 
             var result = repository.InsertIncident(incident);
-            var stored = repository.GetIncidentById(2001);
+
+            var stored = repository.GetIncidents(new FilterSet())
+                .SingleOrDefault(i =>
+                    i.OccurredAt == new DateTime(2026, 4, 10, 8, 0, 0)
+                    && i.EquipmentId == 1
+                    && i.ShiftId == 1
+                    && i.SopId == 1);
 
             Assert.That(result, Is.True);
             Assert.That(stored, Is.Not.Null);
-            Assert.That(stored!.IncidentId, Is.EqualTo(2001));
+            Assert.That(stored!.IncidentId, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void InsertIncident_ReturnsFalse_WhenForeignKeyReferenceIsInvalid()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            var incident = new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 9999,
+                ShiftId = 1,
+                SopId = null
+            };
+
+            var result = repository.InsertIncident(incident);
+
+            var stored = repository.GetIncidents(new FilterSet());
+
+            Assert.That(result, Is.False);
+            Assert.That(stored, Is.Empty);
         }
 
         [Test]
@@ -62,7 +90,6 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             {
                 new Incident
                 {
-                    IncidentId = 2004,
                     OccurredAt = new DateTime(2026, 4, 10, 11, 0, 0),
                     EquipmentId = 1,
                     ShiftId = 1,
@@ -70,54 +97,99 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 },
                 new Incident
                 {
-                    IncidentId = 2005,
                     OccurredAt = new DateTime(2026, 4, 10, 12, 0, 0),
                     EquipmentId = 2,
                     ShiftId = 2,
-                    SopId = 2
+                    SopId = 3
                 }
             };
 
             var result = repository.InsertIncidents(incidents);
 
+            var stored = repository.GetIncidents(new FilterSet());
+
             Assert.That(result, Is.True);
-            Assert.That(repository.GetIncidentById(2004), Is.Not.Null);
-            Assert.That(repository.GetIncidentById(2005), Is.Not.Null);
+            Assert.That(stored.Any(i =>
+                i.OccurredAt == new DateTime(2026, 4, 10, 11, 0, 0)
+                && i.EquipmentId == 1
+                && i.ShiftId == 1
+                && i.SopId == 1), Is.True);
+
+            Assert.That(stored.Any(i =>
+                i.OccurredAt == new DateTime(2026, 4, 10, 12, 0, 0)
+                && i.EquipmentId == 2
+                && i.ShiftId == 2
+                && i.SopId == 3), Is.True);
         }
 
         [Test]
-        public void GetIncidentById_ReturnsMatchingIncident_WhenIdExists()
+        public void InsertIncidents_RollsBackAllRecords_WhenOneIncidentFails()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            var incidents = new List<Incident>
+            {
+                new Incident
+                {
+                    OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                    EquipmentId = 1,
+                    ShiftId = 1,
+                    SopId = 1
+                },
+                new Incident
+                {
+                    OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
+                    EquipmentId = 9999,
+                    ShiftId = 1,
+                    SopId = null
+                }
+            };
+
+            var result = repository.InsertIncidents(incidents);
+
+            var stored = repository.GetIncidents(new FilterSet());
+
+            Assert.That(result, Is.False);
+            Assert.That(stored, Is.Empty);
+        }
+
+        [Test]
+        public void GetIncidents_ReturnsInsertedIncidentWithMappedFields()
         {
             var repository = new IncidentRepository(_databaseManager);
 
             var incident = new Incident
             {
-                IncidentId = 2002,
                 OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 1,
                 SopId = 1
             };
 
-            repository.InsertIncident(incident);
+            bool insertResult = repository.InsertIncident(incident);
 
-            var result = repository.GetIncidentById(2002);
+            var result = repository.GetIncidents(new FilterSet())
+                .SingleOrDefault(i =>
+                    i.OccurredAt == new DateTime(2026, 4, 10, 9, 0, 0)
+                    && i.EquipmentId == 1
+                    && i.ShiftId == 1
+                    && i.SopId == 1);
 
+            Assert.That(insertResult, Is.True);
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.IncidentId, Is.EqualTo(2002));
+            Assert.That(result!.IncidentId, Is.GreaterThan(0));
             Assert.That(result.EquipmentId, Is.EqualTo(1));
             Assert.That(result.ShiftId, Is.EqualTo(1));
             Assert.That(result.SopId, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetIncidents_ReturnsOnlyMatchingIncidentIds_WhenLineFilterIsApplied()
+        public void GetIncidents_ReturnsOnlyMatchingIncident_WhenLineFilterIsApplied()
         {
             var repository = new IncidentRepository(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
-                IncidentId = 2006,
                 OccurredAt = new DateTime(2026, 4, 10, 13, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 1,
@@ -126,11 +198,10 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             repository.InsertIncident(new Incident
             {
-                IncidentId = 2007,
                 OccurredAt = new DateTime(2026, 4, 10, 14, 0, 0),
                 EquipmentId = 2,
                 ShiftId = 2,
-                SopId = 2
+                SopId = 3
             });
 
             var filterSet = new FilterSet
@@ -141,18 +212,52 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.GetIncidents(filterSet);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Select(i => i.IncidentId), Is.EquivalentTo(new[] { 2006 }));
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 13, 0, 0)));
         }
 
         [Test]
-        public void GetAggregatedIncidents_ReturnsExactGroupedCount_ForSelectedGroupingType()
+        public void GetIncidents_ReturnsOnlyMissingSopIncidents_WhenRequireMissingSopIsTrue()
         {
             var repository = new IncidentRepository(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
-                IncidentId = 2008,
-                OccurredAt = new DateTime(2026, 4, 10, 15, 0, 0),
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = null
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            var filterSet = new FilterSet
+            {
+                RequireMissingSop = true
+            };
+
+            var result = repository.GetIncidents(filterSet);
+
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].SopId, Is.Null);
+            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+        }
+
+        [Test]
+        public void GetIncidents_ReturnsOnlyMatchingSopIncidents_WhenSopFilterIsApplied()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 1,
                 SopId = 1
@@ -160,42 +265,147 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             repository.InsertIncident(new Incident
             {
-                IncidentId = 2009,
-                OccurredAt = new DateTime(2026, 4, 10, 16, 0, 0),
+                OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
+                EquipmentId = 2,
+                ShiftId = 1,
+                SopId = 3
+            });
+
+            var filterSet = new FilterSet
+            {
+                SopId = 1
+            };
+
+            var result = repository.GetIncidents(filterSet);
+
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].SopId, Is.EqualTo(1));
+            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void GetIncidents_ReturnsOnlyIncidentsWithinDateRange()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 9, 23, 59, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 12, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 11, 23, 59, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 12, 0, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            var filterSet = new FilterSet
+            {
+                StartDate = new DateTime(2026, 4, 10),
+                EndDate = new DateTime(2026, 4, 11)
+            };
+
+            var result = repository.GetIncidents(filterSet);
+
+            Assert.That(result.Select(i => i.OccurredAt), Is.EquivalentTo(new[]
+            {
+                new DateTime(2026, 4, 10, 12, 0, 0),
+                new DateTime(2026, 4, 11, 23, 59, 0)
+            }));
+        }
+
+        [Test]
+        public void GetIncidents_ReturnsOnlyMatchingIncidents_WhenShiftFilterIsApplied()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
+                EquipmentId = 1,
+                ShiftId = 1,
+                SopId = 1
+            });
+
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 2,
                 SopId = 1
             });
 
-            var result = repository.GetAggregatedIncidents(new FilterSet(), "Equipment");
+            var result = repository.GetIncidents(new FilterSet
+            {
+                ShiftId = 1
+            });
 
-            Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].GroupLabel, Is.EqualTo("1"));
-            Assert.That(result[0].IncidentCount, Is.EqualTo(2));
+            Assert.That(result[0].ShiftId, Is.EqualTo(1));
+            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
         }
 
         [Test]
-        public void CountIncidents_ReturnsMatchingIncidentCount()
+        public void GetIncidents_ReturnsOnlyMatchingIncidents_WhenEquipmentFilterIsApplied()
         {
             var repository = new IncidentRepository(_databaseManager);
 
-            var incident = new Incident
+            repository.InsertIncident(new Incident
             {
-                IncidentId = 2003,
-                OccurredAt = new DateTime(2026, 4, 10, 10, 0, 0),
+                OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                 EquipmentId = 1,
                 ShiftId = 1,
                 SopId = 1
-            };
+            });
 
-            repository.InsertIncident(incident);
+            repository.InsertIncident(new Incident
+            {
+                OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
+                EquipmentId = 2,
+                ShiftId = 1,
+                SopId = 3
+            });
 
-            var filterSet = new FilterSet();
+            var result = repository.GetIncidents(new FilterSet
+            {
+                EquipmentId = 1
+            });
 
-            var result = repository.CountIncidents(filterSet);
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+        }
 
-            Assert.That(result, Is.GreaterThan(0));
+        [Test]
+        public void GetIncidents_ThrowsArgumentNullException_WhenFilterSetIsNull()
+        {
+            var repository = new IncidentRepository(_databaseManager);
+
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                repository.GetIncidents(null!);
+            });
         }
     }
 }

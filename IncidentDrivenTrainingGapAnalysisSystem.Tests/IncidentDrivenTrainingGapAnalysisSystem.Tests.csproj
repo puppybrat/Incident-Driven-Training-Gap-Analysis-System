@@ -10,14 +10,26 @@
 
   <ItemGroup>
     <None Remove="TestData\Csv\invalid-headers.csv" />
+    <None Remove="TestData\Csv\invalid-reference.csv" />
     <None Remove="TestData\Csv\malformed-incidents.csv" />
     <None Remove="TestData\Csv\not-csv.txt" />
     <None Remove="TestData\Csv\valid-incidents.csv" />
-    <None Remove="TestData\Database\README.txt" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="TestData\Csv\future-date.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TestData\Csv\empty.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestData\Csv\invalid-headers.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\Csv\invalid-reference.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\Csv\malformed-incidents.csv">
@@ -27,9 +39,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\Csv\valid-incidents.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="TestData\Database\README.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
