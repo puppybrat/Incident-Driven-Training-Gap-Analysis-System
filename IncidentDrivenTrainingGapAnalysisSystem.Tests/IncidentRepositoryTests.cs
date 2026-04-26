@@ -17,7 +17,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
 
-            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            ReferenceDataRepository referenceDataRepository = new(_databaseManager);
             referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
@@ -36,9 +36,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void InsertIncident_PersistsSingleIncidentRecord()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                 EquipmentId = 1,
@@ -55,17 +55,20 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                     && i.ShiftId == 1
                     && i.SopId == 1);
 
-            Assert.That(result, Is.True);
-            Assert.That(stored, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.True);
+                Assert.That(stored, Is.Not.Null);
+            }
             Assert.That(stored!.IncidentId, Is.GreaterThan(0));
         }
 
         [Test]
         public void InsertIncident_ReturnsFalse_WhenForeignKeyReferenceIsInvalid()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                 EquipmentId = 9999,
@@ -77,88 +80,93 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var stored = repository.GetIncidents(new FilterSet());
 
-            Assert.That(result, Is.False);
-            Assert.That(stored, Is.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.False);
+                Assert.That(stored, Is.Empty);
+            }
         }
 
         [Test]
         public void InsertIncidents_PersistsAllProvidedIncidentRecords()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incidents = new List<Incident>
-            {
-                new Incident
-                {
+            List<Incident> incidents =
+            [
+                new() {
                     OccurredAt = new DateTime(2026, 4, 10, 11, 0, 0),
                     EquipmentId = 1,
                     ShiftId = 1,
                     SopId = 1
                 },
-                new Incident
-                {
+                new() {
                     OccurredAt = new DateTime(2026, 4, 10, 12, 0, 0),
                     EquipmentId = 2,
                     ShiftId = 2,
                     SopId = 3
                 }
-            };
+            ];
 
             var result = repository.InsertIncidents(incidents);
 
             var stored = repository.GetIncidents(new FilterSet());
 
-            Assert.That(result, Is.True);
-            Assert.That(stored.Any(i =>
-                i.OccurredAt == new DateTime(2026, 4, 10, 11, 0, 0)
-                && i.EquipmentId == 1
-                && i.ShiftId == 1
-                && i.SopId == 1), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.True);
+                Assert.That(stored.Any(i =>
+                    i.OccurredAt == new DateTime(2026, 4, 10, 11, 0, 0)
+                    && i.EquipmentId == 1
+                    && i.ShiftId == 1
+                    && i.SopId == 1), Is.True);
 
-            Assert.That(stored.Any(i =>
-                i.OccurredAt == new DateTime(2026, 4, 10, 12, 0, 0)
-                && i.EquipmentId == 2
-                && i.ShiftId == 2
-                && i.SopId == 3), Is.True);
+                Assert.That(stored.Any(i =>
+                    i.OccurredAt == new DateTime(2026, 4, 10, 12, 0, 0)
+                    && i.EquipmentId == 2
+                    && i.ShiftId == 2
+                    && i.SopId == 3), Is.True);
+            }
         }
 
         [Test]
         public void InsertIncidents_RollsBackAllRecords_WhenOneIncidentFails()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incidents = new List<Incident>
-            {
-                new Incident
-                {
+            List<Incident> incidents =
+            [
+                new() {
                     OccurredAt = new DateTime(2026, 4, 10, 8, 0, 0),
                     EquipmentId = 1,
                     ShiftId = 1,
                     SopId = 1
                 },
-                new Incident
-                {
+                new() {
                     OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
                     EquipmentId = 9999,
                     ShiftId = 1,
                     SopId = null
                 }
-            };
+            ];
 
             var result = repository.InsertIncidents(incidents);
 
             var stored = repository.GetIncidents(new FilterSet());
 
-            Assert.That(result, Is.False);
-            Assert.That(stored, Is.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.False);
+                Assert.That(stored, Is.Empty);
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsInsertedIncidentWithMappedFields()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = new DateTime(2026, 4, 10, 9, 0, 0),
                 EquipmentId = 1,
@@ -175,18 +183,25 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                     && i.ShiftId == 1
                     && i.SopId == 1);
 
-            Assert.That(insertResult, Is.True);
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result!.IncidentId, Is.GreaterThan(0));
-            Assert.That(result.EquipmentId, Is.EqualTo(1));
-            Assert.That(result.ShiftId, Is.EqualTo(1));
-            Assert.That(result.SopId, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(insertResult, Is.True);
+                Assert.That(result, Is.Not.Null);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result!.IncidentId, Is.GreaterThan(0));
+                Assert.That(result.EquipmentId, Is.EqualTo(1));
+                Assert.That(result.ShiftId, Is.EqualTo(1));
+                Assert.That(result.SopId, Is.EqualTo(1));
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyMatchingIncident_WhenLineFilterIsApplied()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -204,7 +219,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 3
             });
 
-            var filterSet = new FilterSet
+            FilterSet filterSet = new()
             {
                 LineId = 1
             };
@@ -212,15 +227,18 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.GetIncidents(filterSet);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(1));
-            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
-            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 13, 0, 0)));
+            Assert.That(result, Has.Count.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+                Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 13, 0, 0)));
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyMissingSopIncidents_WhenRequireMissingSopIsTrue()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -238,7 +256,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var filterSet = new FilterSet
+            FilterSet filterSet = new()
             {
                 RequireMissingSop = true
             };
@@ -246,14 +264,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.GetIncidents(filterSet);
 
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].SopId, Is.Null);
-            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].SopId, Is.Null);
+                Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyMatchingSopIncidents_WhenSopFilterIsApplied()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -271,7 +292,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 3
             });
 
-            var filterSet = new FilterSet
+            FilterSet filterSet = new()
             {
                 SopId = 1
             };
@@ -279,14 +300,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.GetIncidents(filterSet);
 
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].SopId, Is.EqualTo(1));
-            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].SopId, Is.EqualTo(1));
+                Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyIncidentsWithinDateRange()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -320,7 +344,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var filterSet = new FilterSet
+            FilterSet filterSet = new()
             {
                 StartDate = new DateTime(2026, 4, 10),
                 EndDate = new DateTime(2026, 4, 11)
@@ -328,17 +352,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = repository.GetIncidents(filterSet);
 
-            Assert.That(result.Select(i => i.OccurredAt), Is.EquivalentTo(new[]
-            {
+            Assert.That(result.Select(i => i.OccurredAt), Is.EquivalentTo(
+            [
                 new DateTime(2026, 4, 10, 12, 0, 0),
                 new DateTime(2026, 4, 11, 23, 59, 0)
-            }));
+            ]));
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyMatchingIncidents_WhenShiftFilterIsApplied()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -362,14 +386,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             });
 
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].ShiftId, Is.EqualTo(1));
-            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].ShiftId, Is.EqualTo(1));
+                Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            }
         }
 
         [Test]
         public void GetIncidents_ReturnsOnlyMatchingIncidents_WhenEquipmentFilterIsApplied()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -393,14 +420,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             });
 
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
-            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+                Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            }
         }
 
         [Test]
         public void GetIncidents_ThrowsArgumentNullException_WhenFilterSetIsNull()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             Assert.Throws<ArgumentNullException>(() =>
             {

@@ -47,11 +47,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <param name="reportData">The report rows to evaluate, or null to return an empty list.</param>
         /// <param name="ruleConfig">The rule configuration to apply, or null to use default settings.</param>
         /// <returns>The evaluated report rows with updated flagged status.</returns>
-        public List<ReportRow> EvaluateThresholds(List<ReportRow>? reportData, RuleConfig? ruleConfig)
+        public static List<ReportRow> EvaluateThresholds(List<ReportRow>? reportData, RuleConfig? ruleConfig)
         {
             if (reportData == null)
             {
-                return new List<ReportRow>();
+                return [];
             }
 
             RuleConfig normalizedConfig = RuleConfig.Normalize(ruleConfig);
@@ -79,7 +79,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// </summary>
         /// <param name="ruleConfig">The rule configuration to validate.</param>
         /// <returns>A validation result containing any rule configuration errors.</returns>
-        public ValidationResult ValidateRuleConfig(RuleConfig ruleConfig)
+        public static ValidationResult ValidateRuleConfig(RuleConfig ruleConfig)
         {
             ValidationResult validationResult = new()
             {

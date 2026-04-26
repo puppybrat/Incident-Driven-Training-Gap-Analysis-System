@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="Incident-Driven Training Gap Analysis System/IncidentDrivenTrainingGapAnalysisSystem.csproj" />
-  <Project Path="IncidentDrivenTrainingGapAnalysisSystem.Tests/IncidentDrivenTrainingGapAnalysisSystem.Tests.csproj" />
+  <Project Path="IncidentDrivenTrainingGapAnalysisSystem.Tests/IncidentDrivenTrainingGapAnalysisSystem.Tests.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
 </Solution>

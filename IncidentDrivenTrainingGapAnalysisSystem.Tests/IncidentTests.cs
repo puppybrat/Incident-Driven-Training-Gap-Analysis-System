@@ -8,7 +8,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsFalse_WhenRequiredFieldsAreMissing()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = default,
                 EquipmentId = 0,
@@ -24,7 +24,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsTrue_WhenAllRequiredFieldsArePresent()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(-1),
                 EquipmentId = 1,
@@ -40,7 +40,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsFalse_WhenOccurredAtIsInFuture()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(1),
                 EquipmentId = 1,
@@ -56,7 +56,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsFalse_WhenEquipmentIdIsMissing()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(-1),
                 EquipmentId = 0,
@@ -72,7 +72,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsFalse_WhenShiftIdIsMissing()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(-1),
                 EquipmentId = 1,
@@ -88,7 +88,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsCompleteForCreation_ReturnsTrue_WhenSopIdIsMissing()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(-1),
                 EquipmentId = 1,

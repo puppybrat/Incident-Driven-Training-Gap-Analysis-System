@@ -22,21 +22,21 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         /// <summary>
         /// Gets or sets the collection of production lines.
         /// </summary>
-        public List<Line> Lines { get; set; } = new List<Line>();
+        public List<Line> Lines { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the collection of shifts.
         /// </summary>
-        public List<Shift> Shifts { get; set; } = new List<Shift>();
+        public List<Shift> Shifts { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the collection of equipment.
         /// </summary>
-        public List<Equipment> Equipment { get; set; } = new List<Equipment>();
+        public List<Equipment> Equipment { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the collection of SOPs.
         /// </summary>
-        public List<SOP> Sops { get; set; } = new List<SOP>();
+        public List<SOP> Sops { get; set; } = [];
     }
 }

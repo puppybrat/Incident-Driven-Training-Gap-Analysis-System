@@ -18,7 +18,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
 
-            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            ReferenceDataRepository referenceDataRepository = new(_databaseManager);
             referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
@@ -37,7 +37,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void GenerateReport_GroupsMatchingIncidents_WhenGroupingFieldsMatch()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             bool firstInsert = repository.InsertIncident(new Incident
             {
@@ -63,13 +63,16 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 3
             });
 
-            Assert.That(firstInsert, Is.True);
-            Assert.That(secondInsert, Is.True);
-            Assert.That(otherEquipmentInsert, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(firstInsert, Is.True);
+                Assert.That(secondInsert, Is.True);
+                Assert.That(otherEquipmentInsert, Is.True);
+            }
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.IncidentsPerEquipment,
                 Filters = new FilterSet
@@ -86,20 +89,26 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.GenerateReport(request);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.OutputType, Is.EqualTo("Table"));
-            Assert.That(result.Rows, Has.Count.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.OutputType, Is.EqualTo("Table"));
+                Assert.That(result.Rows, Has.Count.EqualTo(1));
+            }
 
             ReportRow row = result.Rows[0];
 
-            Assert.That(row.Equipment, Is.EqualTo("Bottle Labeler"));
-            Assert.That(row.GroupValue, Does.Contain("Bottle Labeler"));
-            Assert.That(row.IncidentCount, Is.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(row.Equipment, Is.EqualTo("Bottle Labeler"));
+                Assert.That(row.GroupValue, Does.Contain("Bottle Labeler"));
+                Assert.That(row.IncidentCount, Is.EqualTo(2));
+            }
         }
 
         [Test]
         public void GenerateReport_ThrowsArgumentNullException_WhenRequestIsNull()
         {
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
             Assert.Throws<ArgumentNullException>(() => generator.GenerateReport(null!));
         }
@@ -107,9 +116,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void GenerateReport_CopiesRequestMetadata_ToReportResult()
         {
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.IncidentsPerShiftByLine,
                 Filters = new FilterSet(),
@@ -123,18 +132,21 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = generator.GenerateReport(request);
 
-            Assert.That(result.PresetName, Is.EqualTo(ReportPresetNames.IncidentsPerShiftByLine));
-            Assert.That(result.OutputType, Is.EqualTo("Chart"));
-            Assert.That(result.IncludeLine, Is.True);
-            Assert.That(result.IncludeShift, Is.True);
-            Assert.That(result.IncludeEquipment, Is.False);
-            Assert.That(result.IncludeSop, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.PresetName, Is.EqualTo(ReportPresetNames.IncidentsPerShiftByLine));
+                Assert.That(result.OutputType, Is.EqualTo("Chart"));
+                Assert.That(result.IncludeLine, Is.True);
+                Assert.That(result.IncludeShift, Is.True);
+                Assert.That(result.IncludeEquipment, Is.False);
+                Assert.That(result.IncludeSop, Is.True);
+            }
         }
 
         [Test]
         public void GenerateReport_UsesMissingSopLabel_WhenIncidentHasNullSopId()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -144,9 +156,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = null
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.None,
                 Filters = new FilterSet(),
@@ -158,15 +170,18 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.GenerateReport(request);
 
             Assert.That(result.Rows, Has.Count.EqualTo(1));
-            Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
-            Assert.That(result.Rows[0].GroupValue, Does.Contain("Missing SOP"));
-            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
+                Assert.That(result.Rows[0].GroupValue, Does.Contain("Missing SOP"));
+                Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+            }
         }
 
         [Test]
         public void GenerateReport_ReturnsOnlyMissingSopIncidents_WhenMissingSopPresetIsUsed()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -184,9 +199,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.IncidentsPerMissingSopByLine,
                 Filters = new FilterSet(),
@@ -199,14 +214,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.GenerateReport(request);
 
             Assert.That(result.Rows, Has.Count.EqualTo(1));
-            Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
-            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Rows[0].SOP, Is.EqualTo("Missing SOP"));
+                Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(1));
+            }
         }
 
         [Test]
         public void GenerateReport_ReturnsAllIncidentsGroup_WhenNoFieldsAreIncluded()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -224,9 +242,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 3
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.None,
                 Filters = new FilterSet(),
@@ -241,14 +259,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.GenerateReport(request);
 
             Assert.That(result.Rows, Has.Count.EqualTo(1));
-            Assert.That(result.Rows[0].GroupValue, Is.EqualTo("All Incidents"));
-            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Rows[0].GroupValue, Is.EqualTo("All Incidents"));
+                Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(2));
+            }
         }
 
         [Test]
         public void GenerateReport_BuildsGroupValueStartingWithShift_WhenGroupingTypeIsShift()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -258,9 +279,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.IncidentsPerShiftByLine,
                 Filters = new FilterSet(),
@@ -293,7 +314,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 command.ExecuteNonQuery();
             }
 
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -327,9 +348,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 PresetName = ReportPresetNames.IncidentsPerEquipment,
                 Filters = new FilterSet(),
@@ -341,15 +362,18 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = generator.GenerateReport(request);
 
             Assert.That(result.Rows, Has.Count.EqualTo(1));
-            Assert.That(result.Rows[0].Equipment, Is.EqualTo("Bottle Labeler"));
-            Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(4));
-            Assert.That(result.Rows[0].IsFlagged, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Rows[0].Equipment, Is.EqualTo("Bottle Labeler"));
+                Assert.That(result.Rows[0].IncidentCount, Is.EqualTo(4));
+                Assert.That(result.Rows[0].IsFlagged, Is.True);
+            }
         }
 
         [Test]
         public void ApplyFilters_ReturnsOnlyIncidentsForRequestedLine()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             bool firstInsert = repository.InsertIncident(new Incident
             {
@@ -367,12 +391,15 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 3
             });
 
-            Assert.That(firstInsert, Is.True);
-            Assert.That(secondInsert, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(firstInsert, Is.True);
+                Assert.That(secondInsert, Is.True);
+            }
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
                 Filters = new FilterSet { LineId = 1 },
                 GroupingType = "Equipment",
@@ -383,14 +410,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result[0].EquipmentId, Is.EqualTo(1));
-            Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].EquipmentId, Is.EqualTo(1));
+                Assert.That(result[0].OccurredAt, Is.EqualTo(new DateTime(2026, 4, 10, 8, 0, 0)));
+            }
         }
 
         [Test]
         public void ApplyFilters_ThrowsArgumentNullException_WhenRequestIsNull()
         {
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
             Assert.Throws<ArgumentNullException>(() => generator.ApplyFilters(null!));
         }
@@ -398,7 +428,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void ApplyFilters_UsesEmptyFilterSet_WhenFiltersAreNull()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             repository.InsertIncident(new Incident
             {
@@ -408,11 +438,11 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SopId = 1
             });
 
-            var generator = new ReportGenerator(_databaseManager);
+            ReportGenerator generator = new(_databaseManager);
 
-            var request = new ReportRequest
+            ReportRequest request = new()
             {
-                Filters = null,
+                Filters = null!,
                 GroupingType = "Line",
                 OutputType = "Table"
             };

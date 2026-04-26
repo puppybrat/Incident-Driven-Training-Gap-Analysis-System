@@ -30,7 +30,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         /// <summary>
         /// Gets or sets the result messages describing the import result.
         /// </summary>
-        public List<string> Messages { get; set; } = new();
+        public List<string> Messages { get; set; } = [];
 
         /// <summary>
         /// Gets a value indicating whether at least one row was imported.

@@ -18,7 +18,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
 
-            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            ReferenceDataRepository referenceDataRepository = new(_databaseManager);
             referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
@@ -37,18 +37,21 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void ExportDataset_ReturnsFailure_WhenPathIsInvalid()
         {
-            var manager = new ExportManager(_databaseManager);
+            ExportManager manager = new(_databaseManager);
 
             var result = manager.ExportDataset("", new FilterSet());
 
-            Assert.That(result.Success, Is.False);
-            Assert.That(result.Message, Does.Contain("invalid"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Success, Is.False);
+                Assert.That(result.Message, Does.Contain("invalid"));
+            }
         }
 
         [Test]
         public void ExportDataset_ReturnsFailure_WhenNoIncidentsMatchFilter()
         {
-            var manager = new ExportManager(_databaseManager);
+            ExportManager manager = new(_databaseManager);
             string filePath = Path.Combine(Path.GetTempPath(), "empty-export-test.csv");
 
             if (File.Exists(filePath))
@@ -58,15 +61,18 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = manager.ExportDataset(filePath, new FilterSet());
 
-            Assert.That(result.Success, Is.False);
-            Assert.That(result.Message, Does.Contain("no incident data"));
-            Assert.That(File.Exists(filePath), Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Success, Is.False);
+                Assert.That(result.Message, Does.Contain("no incident data"));
+                Assert.That(File.Exists(filePath), Is.False);
+            }
         }
 
         [Test]
         public void ExportDataset_WritesOnlyFilteredRows_ToCsvFile()
         {
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
             bool firstInsert = repository.InsertIncident(new Incident
             {
@@ -88,7 +94,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             Assert.That(secondInsert, Is.True);
 
-            var manager = new ExportManager(_databaseManager);
+            ExportManager manager = new(_databaseManager);
             string filePath = Path.Combine(Path.GetTempPath(), "export-dataset-test.csv");
 
             if (File.Exists(filePath))
@@ -96,40 +102,49 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 File.Delete(filePath);
             }
 
-            var filterSet = new FilterSet { LineId = 1 };
+            FilterSet filterSet = new() { LineId = 1 };
 
             var result = manager.ExportDataset(filePath, filterSet);
 
-            Assert.That(result.Success, Is.True);
-            Assert.That(File.Exists(filePath), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Success, Is.True);
+                Assert.That(File.Exists(filePath), Is.True);
+            }
 
             string[] lines = File.ReadAllLines(filePath);
 
             Assert.That(lines, Has.Length.EqualTo(2));
-            Assert.That(lines[0], Is.EqualTo("OccurredAt,EquipmentId,ShiftId,SopId"));
-            Assert.That(lines[1], Is.EqualTo("2026-04-10 08:00:00,1,1,1"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines[0], Is.EqualTo("OccurredAt,EquipmentId,ShiftId,SopId"));
+                Assert.That(lines[1], Is.EqualTo("2026-04-10 08:00:00,1,1,1"));
+            }
         }
 
         [Test]
         public void ExportReport_ReturnsFailure_WhenPathIsInvalid()
         {
-            var reportResult = new ReportResult
+            ReportResult reportResult = new()
             {
                 IncludeLine = true,
-                Rows = new List<ReportRow>
-                {
+                Rows =
+                [
                     new ReportRow
                     {
                         Line = "Line 1",
                         IncidentCount = 1
                     }
-                }
+                ]
             };
 
             var result = ExportManager.ExportReport("", reportResult);
 
-            Assert.That(result.Success, Is.False);
-            Assert.That(result.Message, Does.Contain("invalid"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Success, Is.False);
+                Assert.That(result.Message, Does.Contain("invalid"));
+            }
         }
 
         [Test]
@@ -137,15 +152,15 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         {
             string filePath = Path.Combine(Path.GetTempPath(), "export-report-test.csv");
 
-            var reportResult = new ReportResult
+            ReportResult reportResult = new()
             {
                 OutputType = "Table",
                 IncludeLine = true,
                 IncludeShift = true,
                 IncludeEquipment = false,
                 IncludeSop = false,
-                Rows = new List<ReportRow>
-        {
+                Rows =
+        [
             new ReportRow
             {
                 Line = "Line 1",
@@ -160,7 +175,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 IncidentCount = 1,
                 IsFlagged = false
             }
-        }
+        ]
             };
 
             if (File.Exists(filePath))
@@ -170,15 +185,21 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = ExportManager.ExportReport(filePath, reportResult);
 
-            Assert.That(result.Success, Is.True);
-            Assert.That(File.Exists(filePath), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Success, Is.True);
+                Assert.That(File.Exists(filePath), Is.True);
+            }
 
             string[] lines = File.ReadAllLines(filePath);
 
             Assert.That(lines, Has.Length.EqualTo(3));
-            Assert.That(lines[0], Is.EqualTo("Line,Shift,IncidentCount,Status"));
-            Assert.That(lines[1], Is.EqualTo("Line 1,Shift 1,3,Flagged"));
-            Assert.That(lines[2], Is.EqualTo("Line 2,Shift 2,1,Normal"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines[0], Is.EqualTo("Line,Shift,IncidentCount,Status"));
+                Assert.That(lines[1], Is.EqualTo("Line 1,Shift 1,3,Flagged"));
+                Assert.That(lines[2], Is.EqualTo("Line 2,Shift 2,1,Normal"));
+            }
         }
     }
 }

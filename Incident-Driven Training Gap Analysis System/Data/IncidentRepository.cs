@@ -110,7 +110,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
         {
             ArgumentNullException.ThrowIfNull(filterSet);
 
-            List<Incident> incidents = new();
+            List<Incident> incidents = [];
 
             try
             {
@@ -141,7 +141,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Data
             }
             catch
             {
-                return new List<Incident>();
+                return [];
             }
 
             return incidents;

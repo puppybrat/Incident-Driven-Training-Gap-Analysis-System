@@ -147,9 +147,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System
             Shift shift = data.Shifts[random.Next(data.Shifts.Count)];
             Equipment equipment = data.Equipment[random.Next(data.Equipment.Count)];
 
-            List<SOP> matchingSops = data.Sops
-                .Where(sop => sop.EquipmentId == equipment.EquipmentId)
-                .ToList();
+            List<SOP> matchingSops = [.. data.Sops.Where(sop => sop.EquipmentId == equipment.EquipmentId)];
 
             int? sopId = null;
 

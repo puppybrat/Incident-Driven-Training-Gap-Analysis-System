@@ -22,23 +22,23 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Domain
         /// Gets the valid grouping type options for rule configuration.
         /// </summary>
         public static readonly string[] GroupingOptions =
-        {
+        [
             "Shift",
             "Line",
             "Equipment",
             "SOP"
-        };
+        ];
 
         /// <summary>
         /// Gets the valid time window options for rule configuration.
         /// </summary>
         public static readonly string[] TimeWindowOptions =
-        {
+        [
             "7 days",
             "30 days",
             "90 days",
             "120 days"
-        };
+        ];
 
         /// <summary>
         /// Gets or sets the threshold value used to flag report results.

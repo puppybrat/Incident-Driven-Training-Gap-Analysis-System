@@ -117,7 +117,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         {
             SetStatus("Rule configuration contains validation errors.");
 
-            if (validationResult.Errors.Any())
+            if (validationResult.Errors.Count != 0)
             {
                 MessageBox.Show(string.Join(Environment.NewLine, validationResult.Errors));
             }

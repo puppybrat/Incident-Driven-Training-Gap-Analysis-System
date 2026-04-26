@@ -111,11 +111,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
                 return;
             }
 
-            List<string> lines = new()
-            {
+            List<string> lines =
+            [
                 $"Inserted: {_lastImportSummary.InsertedCount}",
                 $"Rejected: {_lastImportSummary.RejectedCount}"
-            };
+            ];
 
             if (_lastImportSummary.Messages.Count > 0)
             {

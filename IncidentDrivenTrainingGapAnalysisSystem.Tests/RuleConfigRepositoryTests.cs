@@ -32,9 +32,9 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void LoadRuleConfig_ReturnsPreviouslySavedConfigurationValues()
         {
-            var repository = new RuleConfigRepository(_databaseManager);
+            RuleConfigRepository repository = new(_databaseManager);
 
-            var config = new RuleConfig
+            RuleConfig config = new()
             {
                 ThresholdValue = 3,
                 GroupingType = "Line",
@@ -47,20 +47,27 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = repository.LoadRuleConfig();
 
-            Assert.That(saveResult, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saveResult, Is.True);
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(3));
-            Assert.That(result.GroupingType, Is.EqualTo("Line"));
-            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
-            Assert.That(result.FlagEnabled, Is.True);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+                Assert.That(result, Is.Not.Null);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(3));
+                Assert.That(result.GroupingType, Is.EqualTo("Line"));
+                Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
+                Assert.That(result.FlagEnabled, Is.True);
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            }
         }
 
         [Test]
         public void ResetRuleConfigToDefaults_ReplacesSavedCustomValues()
         {
-            var repository = new RuleConfigRepository(_databaseManager);
+            RuleConfigRepository repository = new(_databaseManager);
 
             repository.SaveRuleConfig(new RuleConfig
             {
@@ -74,31 +81,37 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = repository.ResetRuleConfigToDefaults();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(RuleConfig.CreateDefault().ThresholdValue));
-            Assert.That(result.GroupingType, Is.EqualTo(RuleConfig.CreateDefault().GroupingType));
-            Assert.That(result.TimeWindow, Is.EqualTo(RuleConfig.CreateDefault().TimeWindow));
-            Assert.That(result.FlagEnabled, Is.EqualTo(RuleConfig.CreateDefault().FlagEnabled));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(RuleConfig.CreateDefault().ThresholdValue));
+                Assert.That(result.GroupingType, Is.EqualTo(RuleConfig.CreateDefault().GroupingType));
+                Assert.That(result.TimeWindow, Is.EqualTo(RuleConfig.CreateDefault().TimeWindow));
+                Assert.That(result.FlagEnabled, Is.EqualTo(RuleConfig.CreateDefault().FlagEnabled));
+            }
         }
 
         [Test]
         public void LoadRuleConfig_ReturnsDefaultConfiguration_WhenNoSavedConfigurationExists()
         {
-            var repository = new RuleConfigRepository(_databaseManager);
+            RuleConfigRepository repository = new(_databaseManager);
 
             var result = repository.LoadRuleConfig();
-            var expected = RuleConfig.CreateDefault();
+            RuleConfig expected = RuleConfig.CreateDefault();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(expected.ThresholdValue));
-            Assert.That(result.GroupingType, Is.EqualTo(expected.GroupingType));
-            Assert.That(result.TimeWindow, Is.EqualTo(expected.TimeWindow));
-            Assert.That(result.FlagEnabled, Is.EqualTo(expected.FlagEnabled));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(expected.ThresholdValue));
+                Assert.That(result.GroupingType, Is.EqualTo(expected.GroupingType));
+                Assert.That(result.TimeWindow, Is.EqualTo(expected.TimeWindow));
+                Assert.That(result.FlagEnabled, Is.EqualTo(expected.FlagEnabled));
+            }
         }
 
         [Test]
         public void SaveRuleConfig_UpdatesExistingConfiguration_WhenConfigurationAlreadyExists()
         {
-            var repository = new RuleConfigRepository(_databaseManager);
+            RuleConfigRepository repository = new(_databaseManager);
 
             repository.SaveRuleConfig(new RuleConfig
             {
@@ -120,12 +133,15 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = repository.LoadRuleConfig();
 
-            Assert.That(saveResult, Is.True);
-            Assert.That(result.ThresholdValue, Is.EqualTo(9));
-            Assert.That(result.GroupingType, Is.EqualTo("Equipment"));
-            Assert.That(result.TimeWindow, Is.EqualTo("90 days"));
-            Assert.That(result.FlagEnabled, Is.False);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saveResult, Is.True);
+                Assert.That(result.ThresholdValue, Is.EqualTo(9));
+                Assert.That(result.GroupingType, Is.EqualTo("Equipment"));
+                Assert.That(result.TimeWindow, Is.EqualTo("90 days"));
+                Assert.That(result.FlagEnabled, Is.False);
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            }
         }
     }
 }

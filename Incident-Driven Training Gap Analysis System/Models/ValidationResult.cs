@@ -28,6 +28,6 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         /// Gets or sets the collection of error messages generated during validation.
         /// This list is empty when validation succeeds.
         /// </summary>
-        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Errors { get; set; } = [];
     }
 }

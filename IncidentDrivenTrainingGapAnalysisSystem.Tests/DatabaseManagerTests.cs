@@ -44,7 +44,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             using var connection = _databaseManager.OpenConnection();
 
-            var tables = new List<string>();
+            List<string> tables = [];
 
             using (var command = connection.CreateCommand())
             {
@@ -77,7 +77,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             command.CommandText = "PRAGMA table_info(Incident);";
 
-            var columns = new List<string>();
+            List<string> columns = [];
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -164,7 +164,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var count = Convert.ToInt32(command.ExecuteScalar());
 
-            Assert.That(count, Is.EqualTo(0));
+            Assert.That(count, Is.Zero);
         }
 
         [Test]
@@ -180,7 +180,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         public void Constructor_SetsConnectionString_FromPath()
         {
             string path = "test.db";
-            var manager = new DatabaseManager(path);
+            DatabaseManager manager = new(path);
 
             Assert.That(manager.ConnectionString, Does.Contain(path));
         }
@@ -188,7 +188,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void Constructor_SetsDefaultConnectionString()
         {
-            var manager = new DatabaseManager();
+            DatabaseManager manager = new();
 
             Assert.That(manager.ConnectionString, Is.EqualTo("Data Source=training_gap_analysis.db"));
         }

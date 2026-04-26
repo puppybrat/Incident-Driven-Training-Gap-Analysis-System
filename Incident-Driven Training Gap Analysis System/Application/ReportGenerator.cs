@@ -56,17 +56,14 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="reportRequest"/> is null.</exception>
         public ReportResult GenerateReport(ReportRequest reportRequest)
         {
-            if (reportRequest == null)
-            {
-                throw new ArgumentNullException(nameof(reportRequest));
-            }
+            ArgumentNullException.ThrowIfNull(reportRequest);
 
             List<Incident> filteredIncidents = ApplyFilters(reportRequest);
             List<ReportRow> rows = BuildRows(filteredIncidents, reportRequest);
 
             RuleEvaluator evaluator = new(_databaseManager);
             RuleConfig config = evaluator.LoadCurrentRuleConfig();
-            rows = evaluator.EvaluateThresholds(rows, config);
+            rows = RuleEvaluator.EvaluateThresholds(rows, config);
 
             return new ReportResult
             {
@@ -88,10 +85,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="reportRequest"/> is null.</exception>
         public List<Incident> ApplyFilters(ReportRequest reportRequest)
         {
-            if (reportRequest == null)
-            {
-                throw new ArgumentNullException(nameof(reportRequest));
-            }
+            ArgumentNullException.ThrowIfNull(reportRequest);
 
             FilterSet filters = reportRequest.Filters ?? new FilterSet();
             return _incidentRepository.GetIncidents(filters);
@@ -124,9 +118,10 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <returns>Report rows for incidents without SOP references.</returns>
         private List<ReportRow> BuildLinesByMissingSop(List<Incident> incidents, ReportRequest reportRequest)
         {
-            List<Incident> incidentsWithoutSop = incidents
-                .Where(i => !i.SopId.HasValue)
-                .ToList();
+            List<Incident> incidentsWithoutSop =
+            [
+                .. incidents.Where(i => !i.SopId.HasValue)
+            ];
 
             return BuildGroupedReport(incidentsWithoutSop, reportRequest);
         }
@@ -146,9 +141,11 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             Dictionary<int, string> lineLookup = referenceData.Lines.ToDictionary(l => l.LineId, l => l.Name);
             Dictionary<int, string> sopLookup = referenceData.Sops.ToDictionary(s => s.SopId, s => s.Name);
 
-            List<ReportRow> rows = incidents
-                .Select(i =>
-                {
+            List<ReportRow> rows =
+            [
+                .. incidents
+                    .Select(i =>
+                    {
                     string shiftName = shiftLookup.TryGetValue(i.ShiftId, out string? shift) ? shift : $"Shift {i.ShiftId}";
 
                     if (!equipmentLookup.TryGetValue(i.EquipmentId, out Equipment? equipment))
@@ -205,18 +202,20 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
                     SOP = g.Key.SOP,
                     IncidentCount = g.Count()
                 })
-                .ToList();
+            ];
 
-            return rows
-                .OrderBy(r => GetPrimaryGroupSortValue(r, reportRequest.GroupingType))
-                .ThenByDescending(r => r.IncidentCount)
-                .ThenByDescending(r => r.IsFlagged)
-                .ThenBy(r => r.GroupValue)
-                .ThenBy(r => r.Line)
-                .ThenBy(r => r.Shift)
-                .ThenBy(r => r.Equipment)
-                .ThenBy(r => r.SOP)
-                .ToList();
+            return
+            [
+                .. rows
+                    .OrderBy(r => GetPrimaryGroupSortValue(r, reportRequest.GroupingType))
+                    .ThenByDescending(r => r.IncidentCount)
+                    .ThenByDescending(r => r.IsFlagged)
+                    .ThenBy(r => r.GroupValue)
+                    .ThenBy(r => r.Line)
+                    .ThenBy(r => r.Shift)
+                    .ThenBy(r => r.Equipment)
+                    .ThenBy(r => r.SOP)
+            ];
         }
 
         /// <summary>
@@ -228,9 +227,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <param name="sop">The SOP value.</param>
         /// <param name="groupingType">The selected grouping type.</param>
         /// <returns>The formatted group label.</returns>
-        private string BuildGroupValue(string line, string shift, string equipment, string sop, string groupingType)
+        private static string BuildGroupValue(string line, string shift, string equipment, string sop, string groupingType)
         {
-            List<string> parts = new();
+            List<string> parts = [];
 
             void AddIfPresent(string value)
             {
@@ -283,7 +282,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <param name="row">The report row to inspect.</param>
         /// <param name="groupingType">The grouping type used to choose the sort field.</param>
         /// <returns>The row value used for sorting.</returns>
-        private string GetPrimaryGroupSortValue(ReportRow row, string groupingType)
+        private static string GetPrimaryGroupSortValue(ReportRow row, string groupingType)
         {
             return groupingType switch
             {

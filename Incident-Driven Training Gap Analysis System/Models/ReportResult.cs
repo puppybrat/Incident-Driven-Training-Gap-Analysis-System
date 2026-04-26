@@ -52,6 +52,6 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         /// <summary>
         /// Gets or sets the collection of rows that make up the report output.
         /// </summary>
-        public List<ReportRow> Rows { get; set; } = new();
+        public List<ReportRow> Rows { get; set; } = [];
     }
 }

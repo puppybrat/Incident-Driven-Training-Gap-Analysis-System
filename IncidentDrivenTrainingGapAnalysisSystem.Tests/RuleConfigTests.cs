@@ -8,47 +8,56 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void CreateDefault_ReturnsExpectedDefaultValues()
         {
-            var result = RuleConfig.CreateDefault();
+            RuleConfig result = RuleConfig.CreateDefault();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(5));
-            Assert.That(result.GroupingType, Is.EqualTo("Shift"));
-            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
-            Assert.That(result.FlagEnabled, Is.True);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(5));
+                Assert.That(result.GroupingType, Is.EqualTo("Shift"));
+                Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
+                Assert.That(result.FlagEnabled, Is.True);
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            }
         }
 
         [Test]
         public void Normalize_ReturnsDefaultConfig_WhenInputIsNull()
         {
-            var result = RuleConfig.Normalize(null);
+            RuleConfig result = RuleConfig.Normalize(null);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(5));
-            Assert.That(result.GroupingType, Is.EqualTo("Shift"));
-            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
-            Assert.That(result.FlagEnabled, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(5));
+                Assert.That(result.GroupingType, Is.EqualTo("Shift"));
+                Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
+                Assert.That(result.FlagEnabled, Is.True);
+            }
         }
 
         [Test]
         public void Normalize_ReturnsDefault_WhenConfigIsNull()
         {
-            var result = RuleConfig.Normalize(null);
+            RuleConfig result = RuleConfig.Normalize(null);
 
-            var expected = RuleConfig.CreateDefault();
+            RuleConfig expected = RuleConfig.CreateDefault();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.ThresholdValue, Is.EqualTo(expected.ThresholdValue));
-            Assert.That(result.GroupingType, Is.EqualTo(expected.GroupingType));
-            Assert.That(result.TimeWindow, Is.EqualTo(expected.TimeWindow));
-            Assert.That(result.FlagEnabled, Is.EqualTo(expected.FlagEnabled));
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(expected.SelectedPresetBehavior));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(expected.ThresholdValue));
+                Assert.That(result.GroupingType, Is.EqualTo(expected.GroupingType));
+                Assert.That(result.TimeWindow, Is.EqualTo(expected.TimeWindow));
+                Assert.That(result.FlagEnabled, Is.EqualTo(expected.FlagEnabled));
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo(expected.SelectedPresetBehavior));
+            }
         }
 
         [Test]
         public void Normalize_ReplacesInvalidValues_WithDefaults()
         {
-            var input = new RuleConfig
+            RuleConfig input = new()
             {
                 ThresholdValue = -10,
                 GroupingType = "Invalid",
@@ -57,18 +66,21 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SelectedPresetBehavior = null!
             };
 
-            var result = RuleConfig.Normalize(input);
+            RuleConfig result = RuleConfig.Normalize(input);
 
-            Assert.That(result.ThresholdValue, Is.EqualTo(5));
-            Assert.That(result.GroupingType, Is.EqualTo("Shift"));
-            Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(5));
+                Assert.That(result.GroupingType, Is.EqualTo("Shift"));
+                Assert.That(result.TimeWindow, Is.EqualTo("7 days"));
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo(string.Empty));
+            }
         }
 
         [Test]
         public void Normalize_KeepsValidValues_WhenInputIsValid()
         {
-            var input = new RuleConfig
+            RuleConfig input = new()
             {
                 ThresholdValue = 10,
                 GroupingType = "Line",
@@ -77,13 +89,16 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                 SelectedPresetBehavior = "Custom"
             };
 
-            var result = RuleConfig.Normalize(input);
+            RuleConfig result = RuleConfig.Normalize(input);
 
-            Assert.That(result.ThresholdValue, Is.EqualTo(10));
-            Assert.That(result.GroupingType, Is.EqualTo("Line"));
-            Assert.That(result.TimeWindow, Is.EqualTo("30 days"));
-            Assert.That(result.FlagEnabled, Is.False);
-            Assert.That(result.SelectedPresetBehavior, Is.EqualTo("Custom"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ThresholdValue, Is.EqualTo(10));
+                Assert.That(result.GroupingType, Is.EqualTo("Line"));
+                Assert.That(result.TimeWindow, Is.EqualTo("30 days"));
+                Assert.That(result.FlagEnabled, Is.False);
+                Assert.That(result.SelectedPresetBehavior, Is.EqualTo("Custom"));
+            }
         }
 
         [Test]
@@ -105,9 +120,12 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsValidGroupingType_ReturnsFalse_WhenNullOrEmpty()
         {
-            Assert.That(RuleConfig.IsValidGroupingType(null), Is.False);
-            Assert.That(RuleConfig.IsValidGroupingType(string.Empty), Is.False);
-            Assert.That(RuleConfig.IsValidGroupingType(" "), Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RuleConfig.IsValidGroupingType(null), Is.False);
+                Assert.That(RuleConfig.IsValidGroupingType(string.Empty), Is.False);
+                Assert.That(RuleConfig.IsValidGroupingType(" "), Is.False);
+            }
         }
 
         [Test]
@@ -129,9 +147,12 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void IsValidTimeWindow_ReturnsFalse_WhenNullOrEmpty()
         {
-            Assert.That(RuleConfig.IsValidTimeWindow(null), Is.False);
-            Assert.That(RuleConfig.IsValidTimeWindow(string.Empty), Is.False);
-            Assert.That(RuleConfig.IsValidTimeWindow(" "), Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RuleConfig.IsValidTimeWindow(null), Is.False);
+                Assert.That(RuleConfig.IsValidTimeWindow(string.Empty), Is.False);
+                Assert.That(RuleConfig.IsValidTimeWindow(" "), Is.False);
+            }
         }
     }
 }

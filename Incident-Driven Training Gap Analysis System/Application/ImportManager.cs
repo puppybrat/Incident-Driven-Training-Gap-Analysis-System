@@ -104,7 +104,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
 
                 _referenceDataSet = _referenceDataRepository.GetAllReferenceData();
 
-                List<Incident> validIncidents = new();
+                List<Incident> validIncidents = [];
 
                 for (int rowIndex = 1; rowIndex < rows.Count; rowIndex++)
                 {
@@ -169,7 +169,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// </summary>
         /// <param name="filePath">The file path to validate.</param>
         /// <returns>true if the file is usable; otherwise, false.</returns>
-        private bool ValidateFileFormat(string filePath)
+        private static bool ValidateFileFormat(string filePath)
         {
             try
             {
@@ -197,9 +197,9 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// </summary>
         /// <param name="filePath">The path to the file to parse.</param>
         /// <returns>A list of parsed rows.</returns>
-        private List<string[]> ParseRows(string filePath)
+        private static List<string[]> ParseRows(string filePath)
         {
-            List<string[]> rows = new();
+            List<string[]> rows = [];
 
             foreach (string line in File.ReadLines(filePath))
             {
@@ -208,7 +208,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
                     continue;
                 }
 
-                rows.Add(ParseCsvLine(line).ToArray());
+                rows.Add([.. ParseCsvLine(line)]);
             }
 
             return rows;
@@ -232,12 +232,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
             }
 
             string[] formats =
-            {
+            [
                 "yyyy-MM-dd HH:mm:ss",
                 "M/d/yyyy H:mm",
                 "M/d/yyyy HH:mm",
                 "MM/dd/yyyy HH:mm"
-            };
+            ];
 
             if (!DateTime.TryParseExact(
                     rowData[0].Trim(),
@@ -381,7 +381,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Application
         /// <returns>A list of values for the CSV row.</returns>
         private static List<string> ParseCsvLine(string line)
         {
-            List<string> values = new();
+            List<string> values = [];
             StringBuilder currentValue = new();
             bool insideQuotes = false;
 

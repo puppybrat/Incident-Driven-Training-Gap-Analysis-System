@@ -175,7 +175,7 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
 
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith("## ") && line.Substring(3).Trim().Equals(section, StringComparison.OrdinalIgnoreCase))
+                    if (line.StartsWith("## ") && line[3..].Trim().Equals(section, StringComparison.OrdinalIgnoreCase))
                     {
                         capture = true;
                         continue;
@@ -207,13 +207,13 @@ namespace Incident_Driven_Training_Gap_Analysis_System.UI
         {
             if (line.StartsWith("### "))
             {
-                string heading = line.Substring(4).Trim().ToUpperInvariant();
+                string heading = line[4..].Trim().ToUpperInvariant();
                 return $"{heading}{Environment.NewLine}{new string('-', heading.Length)}";
             }
 
             if (line.StartsWith("- "))
             {
-                return "• " + line.Substring(2);
+                return "• " + line[2..];
             }
 
             return line;

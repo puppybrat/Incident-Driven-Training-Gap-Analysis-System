@@ -18,7 +18,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             _databaseManager = new DatabaseManager(dbPath);
             _databaseManager.InitializeDatabase();
 
-            var referenceDataRepository = new ReferenceDataRepository(_databaseManager);
+            ReferenceDataRepository referenceDataRepository = new(_databaseManager);
             referenceDataRepository.SeedReferenceDataIfNeeded();
         }
 
@@ -37,7 +37,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void ValidateIncident_ReturnsFailure_WhenRequiredFieldsAreMissing()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = default,
                 EquipmentId = 0,
@@ -48,8 +48,11 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = IncidentManager.ValidateIncident(incident);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Does.Contain("Shift is required."));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Does.Contain("Shift is required."));
+            }
             Assert.That(result.Errors, Does.Contain("Equipment is required."));
         }
 
@@ -58,14 +61,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         {
             var result = IncidentManager.ValidateIncident(null!);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Does.Contain("Incident data is required."));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Does.Contain("Incident data is required."));
+            }
         }
 
         [Test]
         public void ValidateIncident_ReturnsFailure_WhenOccurredAtIsInFuture()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = DateTime.Now.AddDays(1),
                 EquipmentId = 1,
@@ -75,14 +81,17 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = IncidentManager.ValidateIncident(incident);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors.Any(e => e.Contains("cannot be set past")), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors.Any(e => e.Contains("cannot be set past")), Is.True);
+            }
         }
 
         [Test]
         public void ValidateIncident_ReturnsSuccess_WhenRequiredFieldsAreValid()
         {
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = new DateTime(2026, 4, 1, 8, 0, 0),
                 EquipmentId = 1,
@@ -92,16 +101,19 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
 
             var result = IncidentManager.ValidateIncident(incident);
 
-            Assert.That(result.IsValid, Is.True);
-            Assert.That(result.Errors, Is.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Errors, Is.Empty);
+            }
         }
 
         [Test]
         public void CreateIncident_ReturnsFailure_WhenIncidentIsInvalid()
         {
-            var manager = new IncidentManager(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
 
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = default,
                 EquipmentId = 0,
@@ -112,17 +124,20 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
             var result = manager.CreateIncident(incident);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Is.Not.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Is.Not.Empty);
+            }
         }
 
         [Test]
         public void CreateIncident_SavesIncident_WhenIncidentDataIsValid()
         {
-            var manager = new IncidentManager(_databaseManager);
-            var repository = new IncidentRepository(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
+            IncidentRepository repository = new(_databaseManager);
 
-            var incident = new Incident
+            Incident incident = new()
             {
                 OccurredAt = new DateTime(2026, 4, 1, 8, 0, 0),
                 EquipmentId = 1,
@@ -138,40 +153,49 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
                     && i.ShiftId == 1
                     && i.SopId == 1);
 
-            Assert.That(result.IsValid, Is.True);
-            Assert.That(stored, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(stored, Is.Not.Null);
+            }
         }
 
         [Test]
         public void CreateIncident_ReturnsFailure_WhenIncidentIsNull()
         {
-            var manager = new IncidentManager(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
 
             var result = manager.CreateIncident(null!);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Does.Contain("Incident data is required."));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Does.Contain("Incident data is required."));
+            }
         }
 
         [Test]
         public void GetAllReferenceData_ReturnsSeededReferenceData()
         {
-            var manager = new IncidentManager(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
 
             var result = manager.GetAllReferenceData();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Lines, Is.Not.Empty);
-            Assert.That(result.Shifts, Is.Not.Empty);
-            Assert.That(result.Equipment, Is.Not.Empty);
-            Assert.That(result.Sops, Is.Not.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Lines, Is.Not.Empty);
+                Assert.That(result.Shifts, Is.Not.Empty);
+                Assert.That(result.Equipment, Is.Not.Empty);
+                Assert.That(result.Sops, Is.Not.Empty);
+            }
         }
 
         [Test]
         public void GetEquipmentByLine_ReturnsOnlyEquipmentForSelectedLine()
         {
-            var manager = new IncidentManager(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
             var referenceData = manager.GetAllReferenceData();
 
             int lineId = referenceData.Lines.First().LineId;
@@ -186,7 +210,7 @@ namespace IncidentDrivenTrainingGapAnalysisSystem.Tests
         [Test]
         public void GetSopsByEquipment_ReturnsOnlySopsForSelectedEquipment()
         {
-            var manager = new IncidentManager(_databaseManager);
+            IncidentManager manager = new(_databaseManager);
             var referenceData = manager.GetAllReferenceData();
 
             int equipmentId = referenceData.Equipment.First().EquipmentId;

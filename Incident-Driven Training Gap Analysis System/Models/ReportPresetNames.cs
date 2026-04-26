@@ -51,12 +51,12 @@ namespace Incident_Driven_Training_Gap_Analysis_System.Models
         /// Gets the list of preset names available for user selection in the application.
         /// </summary>
         public static readonly string[] AvailablePresets =
-        {
+        [
             None,
             IncidentsPerShiftByLine,
             IncidentsPerMissingSopByLine,
             IncidentsPerEquipment,
             IncidentsPerSopReference
-        };
+        ];
     }
 }
