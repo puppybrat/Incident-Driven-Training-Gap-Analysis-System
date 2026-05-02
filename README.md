@@ -18,3 +18,11 @@
 1. Open Test Explorer in Visual Studio.
 2. Select `Run All Tests`.
 3. Expected result: 107 tests passing, 0 failing.
+
+### Download / Installation
+The portable application is available in the `Portable` folder.
+
+1. Download `Incident-Driven Training Gap Analysis System-x86.zip` and extract the ZIP.
+2. Run `IncidentDrivenTrainingGapAnalysisSystem.exe`.
+
+No additional setup steps are required.
