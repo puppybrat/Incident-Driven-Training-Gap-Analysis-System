@@ -1,0 +1,1 @@
+This folder holds SQLite database files created during tests or copied for test setup.
